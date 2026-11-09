@@ -42,6 +42,15 @@ public struct NetworkDrive: Identifiable, Codable, Hashable, Sendable {
         url.path(percentEncoded: false).trimmingCharacters(in: CharacterSet(charactersIn: "/"))
     }
 
+    /// True when the address designates this drive's share (same protocol,
+    /// server and path, whatever the letter case).
+    public func pointsTo(_ address: URL) -> Bool {
+        let other = NetworkDrive(name: "", url: address)
+        return other.scheme == scheme
+            && other.host == host
+            && other.sharePath.lowercased() == sharePath.lowercased()
+    }
+
     private static let defaultPorts: [String: Int] = [
         "smb": 445, "cifs": 445, "afp": 548, "nfs": 2049,
         "ftp": 21, "http": 80, "https": 443,

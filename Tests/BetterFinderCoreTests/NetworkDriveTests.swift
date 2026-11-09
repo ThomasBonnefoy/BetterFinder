@@ -35,6 +35,14 @@ import Testing
         #expect(NetworkDrive(name: "x", url: URL(string: "smb://s:4455/v")!).port == 4455)
     }
 
+    @Test func recognizesItsOwnAddress() {
+        let drive = NetworkDrive(name: "Commun", url: URL(string: "smb://nas/Commun")!)
+        #expect(drive.pointsTo(URL(string: "smb://NAS/commun/")!))
+        #expect(!drive.pointsTo(URL(string: "smb://nas/commun/sub")!))
+        #expect(!drive.pointsTo(URL(string: "smb://other/commun")!))
+        #expect(!drive.pointsTo(URL(string: "afp://nas/commun")!))
+    }
+
     @Test func suggestedNameIsTheLastFolder() {
         #expect(NetworkDrive.suggestedName(for: URL(string: "smb://nas/share")!) == "share")
         #expect(NetworkDrive.suggestedName(for: URL(string: "smb://nas/Data/Team%20A")!) == "Team A")

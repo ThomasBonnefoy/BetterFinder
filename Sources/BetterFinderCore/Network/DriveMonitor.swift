@@ -136,6 +136,16 @@ public final class DriveMonitor {
         }
     }
 
+    /// The drive whose folder is exactly this one (its root in the sidebar).
+    public func driveMounted(at url: URL) -> NetworkDrive? {
+        drives.first { drive in
+            if case .mounted(let folder) = statuses[drive.id] {
+                return folder.path == url.path
+            }
+            return false
+        }
+    }
+
     // MARK: - Editing the list
 
     public func add(_ drive: NetworkDrive) {
