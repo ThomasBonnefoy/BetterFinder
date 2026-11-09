@@ -47,13 +47,17 @@ extension FocusedValues {
     @Entry var browserModel: BrowserModel?
 }
 
+/// What the app was asked to do on the command line.
+///
+/// The start folder is a named option, `-StartLocation <folder>`: AppKit
+/// would take a bare path for a document to open and would then not open
+/// the default window.
 enum LaunchOptions {
-    /// Folder given on the command line (`BetterFinder /some/folder`), or
-    /// the home folder.
+    /// Folder to show first: the one asked on the command line, or home.
     static var startFolder: URL {
-        for argument in CommandLine.arguments.dropFirst() where !argument.hasPrefix("-") {
+        if let location = UserDefaults.standard.string(forKey: "StartLocation") {
             var isDirectory: ObjCBool = false
-            let path = (argument as NSString).expandingTildeInPath
+            let path = (location as NSString).expandingTildeInPath
             if FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory), isDirectory.boolValue {
                 return URL(filePath: path)
             }

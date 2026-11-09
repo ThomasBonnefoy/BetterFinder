@@ -44,7 +44,7 @@ open dist/BetterFinder.app
 Pour ouvrir l'app directement dans un dossier :
 
 ```bash
-open dist/BetterFinder.app --args ~/Documents
+open dist/BetterFinder.app --args -StartLocation ~/Documents
 ```
 
 Pour l'installer dans `/Applications` :
