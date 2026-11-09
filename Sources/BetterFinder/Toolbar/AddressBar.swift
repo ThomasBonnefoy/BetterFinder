@@ -40,14 +40,14 @@ struct AddressBar: View {
                 if !focused { model.endEditingAddress() }
             }
             .onAppear {
-                text = model.currentURL.path
+                text = model.addressText
                 isInvalid = false
                 isFocused = true
             }
     }
 
     private var breadcrumbs: some View {
-        let crumbs = Breadcrumbs.make(for: model.currentURL)
+        let crumbs = currentCrumbs
         // When the whole path does not fit, drop folders from the left, as
         // Explorer does: the end of the path is the part that matters.
         return ViewThatFits(in: .horizontal) {
@@ -62,22 +62,42 @@ struct AddressBar: View {
         .help("Cliquez pour saisir un chemin")
     }
 
-    private func crumbRow(_ crumbs: [Breadcrumb], isTruncated: Bool) -> some View {
+    /// Steps shown for the current location. A path on a network drive
+    /// starts at the drive, under the name it has in the sidebar.
+    private var currentCrumbs: [Crumb] {
+        switch model.location {
+        case .drive(let id):
+            let name = model.driveMonitor?.drive(id)?.name ?? "Lecteur réseau"
+            return [Crumb(name: name, action: { model.openDrive(id) })]
+        case .folder(let url):
+            return Breadcrumbs.make(for: url).map { crumb in
+                let name = model.driveMonitor?.driveMounted(at: crumb.url)?.name ?? DisplayName.of(crumb.url)
+                return Crumb(name: name, action: { model.navigate(to: crumb.url) })
+            }
+        }
+    }
+
+    private struct Crumb: Identifiable {
+        let id = UUID()
+        let name: String
+        let action: () -> Void
+    }
+
+    private func crumbRow(_ crumbs: [Crumb], isTruncated: Bool) -> some View {
         HStack(spacing: 3) {
             if isTruncated {
                 Text("…").foregroundStyle(.secondary)
                 separator
             }
-            ForEach(crumbs) { crumb in
-                Button(DisplayName.of(crumb.url)) {
-                    model.navigate(to: crumb.url)
-                }
-                .buttonStyle(.plain)
-                .fontWeight(crumb == crumbs.last ? .medium : .regular)
-                .lineLimit(1)
-                .fixedSize()
+            ForEach(Array(crumbs.enumerated()), id: \.offset) { index, crumb in
+                let isLast = index == crumbs.count - 1
+                Button(crumb.name, action: crumb.action)
+                    .buttonStyle(.plain)
+                    .fontWeight(isLast ? .medium : .regular)
+                    .lineLimit(1)
+                    .fixedSize()
 
-                if crumb != crumbs.last {
+                if !isLast {
                     separator
                 }
             }

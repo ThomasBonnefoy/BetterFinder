@@ -6,12 +6,25 @@ L'idée de départ : garder les **lecteurs réseau toujours visibles dans la bar
 
 ## Fonctions
 
+- **Lecteurs réseau toujours visibles** : chaque lecteur garde sa place dans la barre latérale et montre son état (connecté, disponible, hors ligne). Il se reconnecte tout seul quand le serveur répond de nouveau, si l'option est cochée.
 - Liste détaillée triable (nom, date de modification, type, taille), dossiers en premier
 - Barre d'adresse : fil d'Ariane cliquable, ou chemin à saisir (`Cmd+L`)
 - Précédent, suivant, dossier parent
 - Raccourcis de l'Explorateur Windows adaptés au Mac
 
 La suite est décrite dans le [journal des modifications](CHANGELOG.md).
+
+## Lecteurs réseau
+
+Ajoutez un lecteur avec le bouton « + » de la section « Lecteurs réseau » ou avec `Cmd+K`, en donnant son adresse : `smb://serveur/partage`, `\\serveur\partage` ou simplement `serveur/partage`.
+
+| Icône | État | Au clic |
+|---|---|---|
+| Disque relié, texte normal | Connecté | Ouvre le lecteur |
+| Disque relié, texte grisé | Disponible : le serveur répond, le lecteur n'est pas monté | Connecte puis ouvre |
+| Disque barré d'une croix | Hors ligne : le serveur est injoignable (VPN coupé) | Affiche la page du lecteur, avec « Réessayer » |
+
+Le mot de passe est demandé par macOS à la première connexion et rangé dans le Trousseau. BetterFinder n'enregistre que le nom, l'adresse et le nom d'utilisateur, dans `~/Library/Application Support/BetterFinder/drives.json`.
 
 ## Raccourcis
 
@@ -22,6 +35,7 @@ La suite est décrite dans le [journal des modifications](CHANGELOG.md).
 | Dossier suivant | `Option+→` ou `Cmd+]` |
 | Dossier parent | `Option+↑` ou `Cmd+↑` |
 | Modifier l'adresse | `Cmd+L` |
+| Ajouter un lecteur réseau | `Cmd+K` |
 | Actualiser | `Cmd+R` ou `F5` |
 | Afficher les fichiers masqués | `Cmd+Maj+.` |
 
@@ -63,6 +77,6 @@ xattr -dr com.apple.quarantine BetterFinder.app
 
 ## Organisation du code
 
-- `Sources/BetterFinderCore` : la logique (lecture des dossiers, tri, historique de navigation, analyse des chemins), couverte par des tests.
+- `Sources/BetterFinderCore` : la logique (lecture des dossiers, tri, historique de navigation, analyse des chemins, lecteurs réseau), couverte par des tests.
 - `Sources/BetterFinder` : l'interface (SwiftUI pour la fenêtre, AppKit pour la liste de fichiers).
 - `scripts/` : construction du `.app`, installation, archive de release.

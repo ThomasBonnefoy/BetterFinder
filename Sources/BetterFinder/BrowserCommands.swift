@@ -5,6 +5,12 @@ struct BrowserCommands: Commands {
     @FocusedValue(\.browserModel) private var model
 
     var body: some Commands {
+        CommandGroup(after: .newItem) {
+            Button("Ajouter un lecteur réseau…") { model?.driveEditor = DriveEditorRequest() }
+                .keyboardShortcut("k")
+                .disabled(model == nil)
+        }
+
         CommandGroup(before: .sidebar) {
             Button("Actualiser") { model?.reload() }
                 .keyboardShortcut("r")

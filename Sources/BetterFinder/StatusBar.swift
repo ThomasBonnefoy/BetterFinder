@@ -7,10 +7,13 @@ struct StatusBar: View {
 
     var body: some View {
         HStack(spacing: 16) {
-            Text(Self.countText(model.items.count))
-            let selected = model.selectedItems
-            if !selected.isEmpty {
-                Text(Self.selectionText(selected))
+            // A drive's page lists nothing: counting items would be noise.
+            if model.displayedDriveID == nil {
+                Text(Self.countText(model.items.count))
+                let selected = model.selectedItems
+                if !selected.isEmpty {
+                    Text(Self.selectionText(selected))
+                }
             }
             Spacer()
         }

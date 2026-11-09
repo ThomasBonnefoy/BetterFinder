@@ -45,4 +45,16 @@ import Testing
         #expect(!history.canGoBack)
         #expect(history.canGoForward)
     }
+
+    @Test func replacingTheCurrentLocationKeepsBothStacks() {
+        var history = NavigationHistory(start: "a")
+        history.go(to: "placeholder")
+        history.go(to: "c")
+        history.goBack()
+        history.replaceCurrent(with: "b")
+
+        #expect(history.current == "b")
+        #expect(history.backStack == ["a"])
+        #expect(history.forwardStack == ["c"])
+    }
 }
