@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleName</key>
+	<string>BetterFinder</string>
+	<key>CFBundleDisplayName</key>
+	<string>BetterFinder</string>
+	<key>CFBundleExecutable</key>
+	<string>BetterFinder</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.thomasbonnefoy.BetterFinder</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleShortVersionString</key>
+	<string>__VERSION__</string>
+	<key>CFBundleVersion</key>
+	<string>__BUILD__</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>fr</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>fr</string>
+	</array>
+	<key>LSMinimumSystemVersion</key>
+	<string>26.0</string>
+	<key>LSApplicationCategoryType</key>
+	<string>public.app-category.utilities</string>
+	<key>NSPrincipalClass</key>
+	<string>NSApplication</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+	<key>NSDesktopFolderUsageDescription</key>
+	<string>BetterFinder affiche le contenu de votre dossier Bureau.</string>
+	<key>NSDocumentsFolderUsageDescription</key>
+	<string>BetterFinder affiche le contenu de votre dossier Documents.</string>
+	<key>NSDownloadsFolderUsageDescription</key>
+	<string>BetterFinder affiche le contenu de votre dossier Téléchargements.</string>
+	<key>NSNetworkVolumesUsageDescription</key>
+	<string>BetterFinder affiche le contenu de vos lecteurs réseau.</string>
+	<key>NSRemovableVolumesUsageDescription</key>
+	<string>BetterFinder affiche le contenu de vos disques externes.</string>
+</dict>
+</plist>
