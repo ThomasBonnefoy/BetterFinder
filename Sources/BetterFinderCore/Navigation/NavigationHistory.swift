@@ -20,6 +20,12 @@ public struct NavigationHistory<Location: Equatable & Sendable>: Equatable, Send
         forwardStack.removeAll()
     }
 
+    /// Swaps the current location for another one without adding a step:
+    /// used when a placeholder page turns into the real thing.
+    public mutating func replaceCurrent(with location: Location) {
+        current = location
+    }
+
     @discardableResult
     public mutating func goBack() -> Location? {
         guard let previous = backStack.popLast() else { return nil }
