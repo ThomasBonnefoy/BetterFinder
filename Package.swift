@@ -16,5 +16,9 @@ let package = Package(
             name: "BetterFinderCoreTests",
             dependencies: ["BetterFinderCore"]
         ),
+        .testTarget(
+            name: "BetterFinderTests",
+            dependencies: ["BetterFinder", "BetterFinderCore"]
+        ),
     ]
 )

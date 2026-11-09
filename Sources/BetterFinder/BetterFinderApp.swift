@@ -2,10 +2,18 @@ import SwiftUI
 
 @main
 struct BetterFinderApp: App {
+    @State private var volumeStore = VolumeStore()
+
     var body: some Scene {
         WindowGroup {
-            Text("BetterFinder")
-                .frame(minWidth: 700, minHeight: 400)
+            BrowserWindow()
+                .environment(volumeStore)
+                .frame(minWidth: 640, minHeight: 360)
+        }
+        .defaultSize(width: 1040, height: 640)
+        .commands {
+            SidebarCommands()
+            BrowserCommands()
         }
     }
 }
