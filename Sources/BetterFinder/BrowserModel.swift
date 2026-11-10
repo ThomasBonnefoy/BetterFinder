@@ -31,14 +31,38 @@ final class BrowserModel {
     /// Non-nil while the "add or edit a network drive" sheet is open.
     var driveEditor: DriveEditorRequest?
 
+    /// What a running file operation is doing ("Copie…"), for the status bar.
+    private(set) var activity: String?
+    /// Asks the file list to start renaming an item in place.
+    private(set) var renameRequest: RenameRequest?
+    /// An error to show to the user.
+    var alert: OperationAlert?
+    /// Items waiting for the user to confirm their permanent deletion.
+    var deleteConfirmation: DeleteConfirmation?
+    /// The window's undo manager, so that Edit > Undo covers file operations.
+    @ObservationIgnored var undoManager: UndoManager?
+
+    let clipboard: FileClipboard
+
     @ObservationIgnored private var allItems: [FileItem] = []
     @ObservationIgnored private var loadGeneration = 0
-    @ObservationIgnored private var pendingSelection: URL?
+    @ObservationIgnored private var pendingSelection: Set<URL> = []
+    @ObservationIgnored private var pendingRename: URL?
+    @ObservationIgnored private var renameRequestCount = 0
+    @ObservationIgnored private var runningOperations = 0
     @ObservationIgnored private var hasStarted = false
     @ObservationIgnored private let watcher = DirectoryWatcher()
+    @ObservationIgnored private let executor = FileOperationExecutor()
+    /// Undo entries of this window. The undo manager does not retain its
+    /// targets, so they are kept alive here.
+    @ObservationIgnored private var undoRecords: [UndoRecord] = []
 
-    init(start: URL = FileManager.default.homeDirectoryForCurrentUser) {
+    init(
+        start: URL = FileManager.default.homeDirectoryForCurrentUser,
+        clipboard: FileClipboard = .shared
+    ) {
         history = NavigationHistory(start: .folder(Self.normalized(start)))
+        self.clipboard = clipboard
     }
 
     // MARK: - Location
@@ -93,7 +117,7 @@ final class BrowserModel {
             return
         }
         history.go(to: target)
-        pendingSelection = itemToSelect
+        pendingSelection = itemToSelect.map { [$0] } ?? []
         load(resetContent: true)
     }
 
@@ -102,9 +126,9 @@ final class BrowserModel {
         guard history.goBack() != nil else { return }
         // Like Explorer: coming back selects the folder we just left.
         if let left, let current = currentURL, left.deletingLastPathComponent().path == current.path {
-            pendingSelection = left
+            pendingSelection = [left]
         } else {
-            pendingSelection = nil
+            pendingSelection = []
         }
         load(resetContent: true)
     }
@@ -216,6 +240,205 @@ final class BrowserModel {
         applyFilterAndSort()
     }
 
+    // MARK: - File operations
+
+    /// The folder file operations act on, or `nil` on a drive's page.
+    private var operationFolder: URL? {
+        displayedDriveID == nil ? currentURL : nil
+    }
+
+    var canPaste: Bool {
+        operationFolder != nil && clipboard.hasFiles
+    }
+
+    func copySelection() {
+        let urls = selectedItems.map(\.url)
+        guard !urls.isEmpty else { return }
+        clipboard.copy(urls)
+    }
+
+    func cutSelection() {
+        let urls = selectedItems.map(\.url)
+        guard !urls.isEmpty else { return }
+        clipboard.cut(urls)
+    }
+
+    /// Pastes into the current folder: a move after a cut, a copy otherwise.
+    func paste() {
+        guard let folder = operationFolder else { return }
+        let content = clipboard.contents()
+        guard !content.urls.isEmpty else { return }
+        if content.isCut {
+            perform(.move(sources: content.urls, to: folder), actionName: "le déplacement", activity: "Déplacement…") {
+                [clipboard] in clipboard.clearCut()
+            }
+        } else {
+            perform(.copy(sources: content.urls, to: folder), actionName: "la copie", activity: "Copie…")
+        }
+    }
+
+    func trashSelection() {
+        let urls = selectedItems.map(\.url)
+        guard !urls.isEmpty else { return }
+        perform(.trash(urls), actionName: "la mise à la corbeille", activity: "Mise à la corbeille…")
+    }
+
+    /// Asks before deleting the selection for good (Shift+Delete in Explorer).
+    func askToDeleteSelection() {
+        let urls = selectedItems.map(\.url)
+        guard !urls.isEmpty else { return }
+        deleteConfirmation = DeleteConfirmation(urls: urls, becauseNoTrash: false)
+    }
+
+    func deletePermanently(_ urls: [URL]) {
+        perform(.delete(urls), actionName: "la suppression", activity: "Suppression…")
+    }
+
+    func rename(_ url: URL, to newName: String) {
+        guard newName != url.lastPathComponent else { return }
+        perform(.rename(url, to: newName), actionName: "le renommage", activity: "Renommage…")
+    }
+
+    /// Asks the file list to edit the name of the single selected item.
+    func renameSelection() {
+        guard selection.count == 1, let url = selection.first else { return }
+        renameRequestCount += 1
+        renameRequest = RenameRequest(id: renameRequestCount, url: url)
+    }
+
+    func newFolder() {
+        guard let folder = operationFolder else { return }
+        perform(
+            .createFolder(in: folder, name: "Nouveau dossier"),
+            actionName: "la création du dossier", activity: "Création…", renameCreated: true
+        )
+    }
+
+    func newTextFile() {
+        guard let folder = operationFolder else { return }
+        perform(
+            .createFile(in: folder, name: "Nouveau document texte.txt"),
+            actionName: "la création du document", activity: "Création…", renameCreated: true
+        )
+    }
+
+    /// Explorer's "Copy as path".
+    func copyPathOfSelection() {
+        let paths = selectedItems.map(\.url.path)
+        guard !paths.isEmpty else { return }
+        clipboard.copyText(paths.joined(separator: "\n"))
+    }
+
+    func revealSelectionInFinder() {
+        let urls = selectedItems.map(\.url)
+        if urls.isEmpty, let folder = currentURL {
+            NSWorkspace.shared.activateFileViewerSelecting([folder])
+        } else {
+            NSWorkspace.shared.activateFileViewerSelecting(urls)
+        }
+    }
+
+    /// Runs an operation in the background and makes it undoable.
+    ///
+    /// The undo entry is registered right away, while the operation is still
+    /// running: that is the only moment the undo manager can tell whether it
+    /// belongs to the undo or to the redo stack. What it will actually do is
+    /// filled in when the operation ends.
+    private func perform(
+        _ operation: FileOperation,
+        actionName: String,
+        activity: String,
+        renameCreated: Bool = false,
+        afterSuccess: (@MainActor () -> Void)? = nil
+    ) {
+        let record = UndoRecord()
+        undoRecords.append(record)
+        if let undoManager {
+            undoManager.registerUndo(withTarget: record) { [weak self] record in
+                MainActor.assumeIsolated {
+                    self?.revert(record, actionName: actionName)
+                }
+            }
+            undoManager.setActionName(actionName)
+        }
+
+        runningOperations += 1
+        self.activity = activity
+
+        Task {
+            let outcome = await executor.run(operation)
+
+            runningOperations -= 1
+            if runningOperations == 0 {
+                self.activity = nil
+            }
+            record.inverse = outcome.undo
+            if outcome.undo == nil {
+                // Nothing to undo: drop the entry registered up front.
+                undoManager?.removeAllActions(withTarget: record)
+                undoRecords.removeAll { $0 === record }
+            }
+            if let failure = outcome.failure {
+                present(failure)
+            } else {
+                afterSuccess?()
+            }
+
+            // Show the result: select what was created here, then refresh.
+            if let folder = operationFolder {
+                let here = outcome.affected
+                    .map(Self.normalized)
+                    .filter { $0.deletingLastPathComponent().path == folder.path }
+                if !here.isEmpty {
+                    pendingSelection = Set(here)
+                    pendingRename = renameCreated ? here.first : nil
+                }
+                load(resetContent: false)
+            }
+        }
+    }
+
+    private func revert(_ record: UndoRecord, actionName: String) {
+        guard let operation = record.inverse else {
+            // The operation is still running, or left nothing to undo.
+            NSSound.beep()
+            return
+        }
+        perform(operation, actionName: actionName, activity: "Annulation…")
+    }
+
+    private func present(_ failure: FileOperationFailure) {
+        let name = failure.url?.lastPathComponent ?? ""
+        switch failure.reason {
+        case .trashUnavailable:
+            // No Trash on this volume (typical of network shares): offer to
+            // delete for good instead.
+            deleteConfirmation = DeleteConfirmation(urls: failure.remaining, becauseNoTrash: true)
+        case .nameTaken:
+            alert = OperationAlert(
+                title: "Ce nom est déjà utilisé",
+                message: "Un élément nommé « \(name) » existe déjà à cet endroit."
+            )
+        case .invalidName(let problem):
+            alert = OperationAlert(title: "Nom impossible", message: Self.explanation(of: problem))
+        case .intoItself:
+            alert = OperationAlert(
+                title: "Opération impossible",
+                message: "Le dossier « \(name) » ne peut pas être copié ou déplacé dans lui-même."
+            )
+        case .system(let message):
+            alert = OperationAlert(title: "L'opération a échoué", message: message)
+        }
+    }
+
+    private static func explanation(of problem: FileNaming.Problem) -> String {
+        switch problem {
+        case .empty: "Le nom ne peut pas être vide."
+        case .forbiddenCharacter: "Un nom ne peut contenir ni « / » ni « : »."
+        case .reserved: "« . » et « .. » sont réservés par le système."
+        }
+    }
+
     // MARK: - Address bar
 
     /// Text put in the address field when editing starts.
@@ -310,10 +533,18 @@ final class BrowserModel {
                 isLocalVolume = listing.isLocalVolume
                 state = .loaded
                 applyFilterAndSort()
-                if let pending = pendingSelection {
-                    pendingSelection = nil
-                    if items.contains(where: { $0.url == pending }) {
-                        selection = [pending]
+                if !pendingSelection.isEmpty {
+                    let found = pendingSelection.intersection(items.map(\.url))
+                    pendingSelection = []
+                    if !found.isEmpty {
+                        selection = found
+                    }
+                }
+                if let url = pendingRename {
+                    pendingRename = nil
+                    if items.contains(where: { $0.url == url }) {
+                        renameRequestCount += 1
+                        renameRequest = RenameRequest(id: renameRequestCount, url: url)
                     }
                 }
             } catch {
@@ -329,7 +560,8 @@ final class BrowserModel {
     private func showNoContent(blockedBy drive: UUID?) {
         watcher.stop()
         blockedDrive = drive
-        pendingSelection = nil
+        pendingSelection = []
+        pendingRename = nil
         allItems = []
         items = []
         selection = []
@@ -379,4 +611,32 @@ struct DriveEditorRequest: Identifiable {
         self.existing = existing
         self.address = address
     }
+}
+
+/// Asks the file list to start editing an item's name.
+struct RenameRequest: Equatable {
+    let id: Int
+    let url: URL
+}
+
+/// An error shown in an alert.
+struct OperationAlert: Identifiable {
+    let id = UUID()
+    let title: String
+    let message: String
+}
+
+/// Items about to be deleted for good, pending the user's confirmation.
+struct DeleteConfirmation: Identifiable {
+    let id = UUID()
+    let urls: [URL]
+    /// True when the question comes up because the volume has no Trash.
+    let becauseNoTrash: Bool
+}
+
+/// One entry of the undo stack. `inverse` is filled when the operation it
+/// undoes has finished.
+@MainActor
+private final class UndoRecord {
+    var inverse: FileOperation?
 }
