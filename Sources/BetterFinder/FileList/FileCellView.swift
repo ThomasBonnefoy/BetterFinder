@@ -53,7 +53,11 @@ final class FileCellView: NSTableCellView {
         fatalError("init(coder:) is not supported")
     }
 
-    func configure(with item: FileItem, isLocalVolume: Bool) {
+    func configure(with item: FileItem, isLocalVolume: Bool, isCut: Bool) {
+        // Cut items are shown faded until they are pasted, as in Explorer.
+        let alpha: CGFloat = isCut ? 0.45 : 1
+        textField?.alphaValue = alpha
+        imageView?.alphaValue = alpha
         switch column {
         case .name:
             textField?.stringValue = item.name
@@ -65,6 +69,31 @@ final class FileCellView: NSTableCellView {
         case .size:
             textField?.stringValue = item.size.map(FileFormat.size) ?? ""
         }
+    }
+}
+
+extension FileCellView {
+    /// Turns the name label into an editable field holding `name`.
+    func beginEditing(name: String) {
+        guard let field = textField else { return }
+        field.stringValue = name
+        field.alphaValue = 1
+        field.isEditable = true
+        field.drawsBackground = true
+        field.backgroundColor = .textBackgroundColor
+        field.textColor = .labelColor
+        // A long name scrolls while it is typed instead of being truncated.
+        field.cell?.isScrollable = true
+    }
+
+    /// Turns the field back into a plain label.
+    func endEditing() {
+        guard let field = textField else { return }
+        field.isEditable = false
+        field.isSelectable = false
+        field.drawsBackground = false
+        field.cell?.isScrollable = false
+        field.lineBreakMode = .byTruncatingMiddle
     }
 }
 
