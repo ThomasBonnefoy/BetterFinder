@@ -38,9 +38,13 @@ struct BrowserWindow: View {
                 ToolbarItem(placement: .principal) {
                     AddressBar(model: model)
                 }
-                ToolbarItem(placement: .primaryAction) {
+                ToolbarItemGroup(placement: .primaryAction) {
                     Button("Actualiser", systemImage: "arrow.clockwise") { model.reload() }
                         .help("Actualiser")
+                    // Always there: macOS hides the tab bar, and its own "+",
+                    // while the window has a single tab.
+                    Button("Nouvel onglet", systemImage: "plus") { model.newTab() }
+                        .help("Nouvel onglet")
                 }
             }
         }
