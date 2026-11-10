@@ -4,6 +4,18 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et les n
 
 ## [Non publié]
 
+## [0.5.0] - 2026-11-10
+
+Les onglets.
+
+### Ajouté
+- Onglets dans la fenêtre, avec la barre d'onglets de macOS (la même que celle du Finder) : chaque onglet a son dossier, son historique et sa sélection.
+- Nouvel onglet avec `Cmd+T` ou le bouton « + » de la barre d'onglets. Il s'ouvre sur le dossier personnel, juste après l'onglet courant.
+- « Ouvrir dans un nouvel onglet » au clic droit sur un dossier : dans la liste (un onglet par dossier sélectionné), dans l'arborescence, sur un favori, un volume ou un lecteur réseau connecté.
+- `Cmd+Entrée` ou `Cmd+double-clic` ouvre un dossier dans un nouvel onglet.
+- `Cmd+W` ferme l'onglet ; `Ctrl+Tab` et `Ctrl+Maj+Tab` passent d'un onglet à l'autre. Un onglet se déplace à la souris, se détache en fenêtre ou rejoint une autre fenêtre (menu Fenêtre).
+- L'arborescence de la barre latérale est commune à tous les onglets : un dossier déplié dans l'un l'est dans les autres.
+
 ## [0.4.0] - 2026-11-10
 
 L'arborescence dans la barre latérale.
