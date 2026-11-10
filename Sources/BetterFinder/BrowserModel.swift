@@ -43,6 +43,8 @@ final class BrowserModel {
     @ObservationIgnored var undoManager: UndoManager?
 
     let clipboard: FileClipboard
+    /// Folder tree of the sidebar.
+    let sidebarTree = SidebarTreeModel()
 
     @ObservationIgnored private var allItems: [FileItem] = []
     @ObservationIgnored private var loadGeneration = 0
@@ -100,6 +102,10 @@ final class BrowserModel {
     /// Gives the window its network drives. Called once, before `start`.
     func attach(_ monitor: DriveMonitor) {
         driveMonitor = monitor
+        sidebarTree.isUnreachable = { [weak monitor] url in
+            guard let monitor, let drive = monitor.drive(containing: url) else { return false }
+            return monitor.status(of: drive.id) == .offline
+        }
     }
 
     /// Loads the first folder. Called once, when the window appears.
@@ -153,6 +159,13 @@ final class BrowserModel {
             Task { await connectDrive(id) }
             return
         }
+        sidebarTree.reload()
+        load(resetContent: false)
+    }
+
+    /// The current folder changed on disk.
+    private func contentChanged() {
+        guard displayedDriveID == nil else { return }
         load(resetContent: false)
     }
 
@@ -521,7 +534,7 @@ final class BrowserModel {
             selection = []
             state = .loading
             watcher.watch(url) { [weak self] in
-                Task { @MainActor in self?.reload() }
+                Task { @MainActor in self?.contentChanged() }
             }
         }
 
@@ -532,6 +545,7 @@ final class BrowserModel {
                 allItems = listing.items.map(Self.normalized)
                 isLocalVolume = listing.isLocalVolume
                 state = .loaded
+                sidebarTree.folderLoaded(url, items: allItems)
                 applyFilterAndSort()
                 if !pendingSelection.isEmpty {
                     let found = pendingSelection.intersection(items.map(\.url))
@@ -585,7 +599,7 @@ final class BrowserModel {
         URL(filePath: url.standardizedFileURL.path, directoryHint: .notDirectory)
     }
 
-    nonisolated private static func normalized(_ item: FileItem) -> FileItem {
+    nonisolated static func normalized(_ item: FileItem) -> FileItem {
         FileItem(
             url: normalized(item.url),
             name: item.name,

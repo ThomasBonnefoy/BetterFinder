@@ -3,6 +3,7 @@ import SwiftUI
 /// Menu bar commands that act on the frontmost browser window.
 struct BrowserCommands: Commands {
     @FocusedValue(\.browserModel) private var model
+    @AppStorage(SidebarSettings.followsLocationKey) private var sidebarFollowsLocation = false
 
     var body: some Commands {
         CommandGroup(after: .newItem) {
@@ -33,6 +34,7 @@ struct BrowserCommands: Commands {
             Toggle("Afficher les fichiers masqués", isOn: showHidden)
                 .keyboardShortcut(".", modifiers: [.command, .shift])
                 .disabled(model == nil)
+            Toggle("Développer jusqu'au dossier ouvert", isOn: $sidebarFollowsLocation)
             Divider()
         }
 

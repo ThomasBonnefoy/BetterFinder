@@ -5,6 +5,8 @@ import SwiftUI
 enum SidebarItem: Hashable {
     case place(URL)
     case drive(UUID)
+    /// A folder of the tree, below one of the rows above.
+    case folder(FolderTreeNode)
 }
 
 struct SidebarView: View {
@@ -13,6 +15,8 @@ struct SidebarView: View {
     @Environment(DriveMonitor.self) private var driveMonitor
 
     @State private var driveToRemove: NetworkDrive?
+    /// Explorer's "Expand to open folder".
+    @AppStorage(SidebarSettings.followsLocationKey) private var followsLocation = false
 
     private let favorites = Favorite.defaults
 
@@ -20,18 +24,24 @@ struct SidebarView: View {
         List(selection: selection) {
             Section("Favoris") {
                 ForEach(favorites) { favorite in
-                    Label(favorite.name, systemImage: favorite.symbol)
-                        .sidebarRow { model.navigate(to: favorite.url) }
-                        .tag(SidebarItem.place(favorite.url))
+                    FolderBranch(node: FolderTreeNode(root: favorite.url, url: favorite.url), model: model) {
+                        Label(favorite.name, systemImage: favorite.symbol)
+                            .sidebarRow { model.navigate(to: favorite.url) }
+                            .tag(SidebarItem.place(favorite.url))
+                    }
                 }
             }
 
             Section {
                 ForEach(driveMonitor.drives) { drive in
-                    NetworkDriveRow(drive: drive, status: driveMonitor.status(of: drive.id))
-                        .sidebarRow { model.openDrive(drive.id) }
-                        .tag(SidebarItem.drive(drive.id))
-                        .contextMenu { driveMenu(for: drive) }
+                    if let root = mountedRoot(of: drive) {
+                        FolderBranch(node: FolderTreeNode(root: root, url: root), model: model) {
+                            driveRow(drive)
+                        }
+                    } else {
+                        // Not connected: the row stays, with nothing to unfold.
+                        driveRow(drive)
+                    }
                 }
                 if driveMonitor.drives.isEmpty {
                     Button {
@@ -58,13 +68,19 @@ struct SidebarView: View {
             Section("Emplacements") {
                 ForEach(localVolumes) { volume in
                     let url = BrowserModel.normalized(volume.url)
-                    Label(volume.name, systemImage: symbol(for: volume))
-                        .sidebarRow { model.navigate(to: url) }
-                        .tag(SidebarItem.place(url))
+                    FolderBranch(node: FolderTreeNode(root: url, url: url), model: model) {
+                        Label(volume.name, systemImage: symbol(for: volume))
+                            .sidebarRow { model.navigate(to: url) }
+                            .tag(SidebarItem.place(url))
+                    }
                 }
             }
         }
         .listStyle(.sidebar)
+        .onChange(of: model.currentURL, initial: true) { revealCurrentFolder() }
+        .onChange(of: followsLocation) { revealCurrentFolder() }
+        // A volume or a drive just showed up: the current folder may be on it.
+        .onChange(of: treeRoots) { revealCurrentFolder() }
         .confirmationDialog(
             "Retirer « \(driveToRemove?.name ?? "") » de la barre latérale ?",
             isPresented: Binding(
@@ -81,6 +97,19 @@ struct SidebarView: View {
     }
 
     // MARK: - Network drives
+
+    private func driveRow(_ drive: NetworkDrive) -> some View {
+        NetworkDriveRow(drive: drive, status: driveMonitor.status(of: drive.id))
+            .sidebarRow { model.openDrive(drive.id) }
+            .tag(SidebarItem.drive(drive.id))
+            .contextMenu { driveMenu(for: drive) }
+    }
+
+    /// Root folder of a drive whose content can be read right now.
+    private func mountedRoot(of drive: NetworkDrive) -> URL? {
+        guard case .mounted(let folder) = driveMonitor.status(of: drive.id) else { return nil }
+        return BrowserModel.normalized(folder)
+    }
 
     @ViewBuilder
     private func driveMenu(for drive: NetworkDrive) -> some View {
@@ -109,6 +138,20 @@ struct SidebarView: View {
         return volumeStore.volumes.filter { !driveRoots.contains($0.url.path) }
     }
 
+    // MARK: - Folder tree
+
+    /// Folders of the rows that can be unfolded, in sidebar order.
+    private var treeRoots: [URL] {
+        favorites.map(\.url)
+            + driveMonitor.drives.compactMap(mountedRoot)
+            + localVolumes.map { BrowserModel.normalized($0.url) }
+    }
+
+    private func revealCurrentFolder() {
+        guard followsLocation, model.displayedDriveID == nil, let current = model.currentURL else { return }
+        model.sidebarTree.reveal(current, roots: treeRoots)
+    }
+
     // MARK: - Selection
 
     /// Highlights the row of the current location, if it has one, and
@@ -120,6 +163,7 @@ struct SidebarView: View {
                 switch item {
                 case .place(let url): model.navigate(to: url)
                 case .drive(let id): model.openDrive(id)
+                case .folder(let node): model.navigate(to: node.url)
                 case nil: break
                 }
             }
@@ -131,11 +175,18 @@ struct SidebarView: View {
             return .drive(id)
         }
         guard let current = model.currentURL else { return nil }
-        if let drive = driveMonitor.drive(containing: current) {
+        if let drive = driveMonitor.drives.first(where: { mountedRoot(of: $0) == current }) {
             return .drive(drive.id)
         }
         let places = favorites.map(\.url) + localVolumes.map { BrowserModel.normalized($0.url) }
-        return places.first { $0 == current }.map(SidebarItem.place)
+        if let place = places.first(where: { $0 == current }) {
+            return .place(place)
+        }
+        // A folder shown in the tree, else the drive it is on.
+        if let node = model.sidebarTree.visibleNode(for: current, roots: treeRoots, showHidden: model.showHidden) {
+            return .folder(node)
+        }
+        return driveMonitor.drive(containing: current).map { .drive($0.id) }
     }
 
     private func symbol(for volume: VolumeInfo) -> String {
@@ -144,7 +195,12 @@ struct SidebarView: View {
     }
 }
 
-private extension View {
+enum SidebarSettings {
+    /// Whether the tree unfolds down to the folder shown in the window.
+    static let followsLocationKey = "SidebarFollowsLocation"
+}
+
+extension View {
     /// Makes the whole row clickable, including when it is already selected:
     /// a list only reports selection *changes*, and Explorer goes back to a
     /// drive's root when its row is clicked again.
