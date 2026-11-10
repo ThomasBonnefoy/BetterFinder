@@ -42,7 +42,7 @@ import BetterFinderCore
     private func settled(_ model: BrowserModel) async throws {
         for _ in 0..<500 {
             try await Task.sleep(for: .milliseconds(10))
-            if model.state != .loading, model.activity == nil { return }
+            if model.state != .loading, model.activity == nil, model.pendingLoads == 0 { return }
         }
         Issue.record("The model did not settle")
     }

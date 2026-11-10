@@ -52,6 +52,9 @@ final class BrowserModel {
 
     @ObservationIgnored private var allItems: [FileItem] = []
     @ObservationIgnored private var loadGeneration = 0
+    /// Folder listings still running. A refresh keeps `state` at `.loaded`,
+    /// so this is the only way to tell that the list is up to date.
+    @ObservationIgnored private(set) var pendingLoads = 0
     @ObservationIgnored private var pendingSelection: Set<URL> = []
     @ObservationIgnored private var pendingRename: URL?
     @ObservationIgnored private var renameRequestCount = 0
@@ -609,7 +612,9 @@ final class BrowserModel {
             }
         }
 
+        pendingLoads += 1
         Task {
+            defer { pendingLoads -= 1 }
             do {
                 let listing = try await DirectoryLoader.load(url)
                 guard generation == loadGeneration else { return }
