@@ -72,16 +72,10 @@ scripts/bundle.sh
 open dist/BetterFinder.app
 ```
 
-Pour ouvrir l'app directement dans un dossier :
+L'app s'ouvre sur « Ce Mac ». Pour l'ouvrir directement dans un dossier :
 
 ```bash
 open dist/BetterFinder.app --args -StartLocation ~/Documents
-```
-
-Pour l'ouvrir sur la vue « Ce Mac » :
-
-```bash
-open dist/BetterFinder.app --args -StartLocation "Ce Mac"
 ```
 
 Pour l'installer dans `/Applications` :

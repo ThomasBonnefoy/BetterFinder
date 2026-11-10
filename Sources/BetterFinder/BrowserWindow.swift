@@ -69,8 +69,9 @@ struct BrowserWindow: View {
             case .computer:
                 model.start(onComputer: true)
             case .drive, nil:
-                // Not a tab: a window, which starts where the app was asked to.
-                model.start(onComputer: LaunchOptions.takeStartsOnComputer())
+                // Not a tab: a window, which starts where the app was asked
+                // to, and on the computer's overview otherwise.
+                model.start(onComputer: LaunchOptions.startsOnComputer)
             }
             if let address = LaunchOptions.takeShareAddress() {
                 _ = model.submitAddress(address)
@@ -149,7 +150,8 @@ enum LaunchOptions {
         UserDefaults.standard.string(forKey: "StartLocation")
     }
 
-    /// Folder to show first: the one asked on the command line, or home.
+    /// Folder to show first when the command line names one. Home stands in
+    /// when it names something else, such as a share that is not mounted.
     static var startFolder: URL {
         if let location = startLocation {
             var isDirectory: ObjCBool = false
@@ -161,14 +163,11 @@ enum LaunchOptions {
         return FileManager.default.homeDirectoryForCurrentUser
     }
 
-    private static var startsOnComputerTaken = false
-
-    /// True when the command line asks for the computer's overview
-    /// (`-StartLocation "Ce Mac"`). Only the first window gets it.
-    static func takeStartsOnComputer() -> Bool {
-        guard !startsOnComputerTaken else { return false }
-        startsOnComputerTaken = true
-        guard let location = startLocation else { return false }
+    /// True when windows open on the computer's overview, like Explorer on
+    /// "This PC": always, unless the command line names a folder or a share
+    /// (`-StartLocation ~/Documents`).
+    static var startsOnComputer: Bool {
+        guard let location = startLocation else { return true }
         return location.compare(BrowserModel.computerName, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
     }
 

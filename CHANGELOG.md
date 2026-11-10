@@ -15,8 +15,7 @@ La vue « Ce Mac », l'équivalent de « Ce PC ».
 - Le bouton « dossier parent » mène à « Ce Mac » depuis la racine d'un disque ou d'un lecteur, comme dans l'Explorateur.
 - Clic droit sur une tuile : ouvrir, ouvrir dans un nouvel onglet, copier le chemin d'accès, afficher dans le Finder ; pour un lecteur réseau : déconnecter, modifier.
 - « Actualiser » relit l'espace libre des disques et l'état des lecteurs.
-- Un nouvel onglet (`Cmd+T` ou « + ») s'ouvre sur « Ce Mac », et non plus sur le dossier personnel.
-- Option de lancement `-StartLocation "Ce Mac"`.
+- BetterFinder s'ouvre sur « Ce Mac », et non plus sur le dossier personnel. Les nouvelles fenêtres et les nouveaux onglets (`Cmd+T` ou « + ») aussi.
 
 ## [0.5.0] - 2026-11-10
 
