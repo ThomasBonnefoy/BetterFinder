@@ -16,6 +16,10 @@ struct StatusBar: View {
                 }
             }
             Spacer()
+            if let activity = model.activity {
+                ProgressView().controlSize(.mini)
+                Text(activity)
+            }
         }
         .font(.callout)
         .foregroundStyle(.secondary)

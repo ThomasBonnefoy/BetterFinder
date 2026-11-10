@@ -15,20 +15,16 @@ struct FileListView: View {
 
     private func table(for folder: URL) -> some View {
         FileTableView(
-            folder: folder,
-            items: model.items,
-            selection: model.selection,
-            sort: model.sort,
-            isLocalVolume: model.isLocalVolume,
-            focusRequests: model.listFocusRequests,
-            actions: FileTableView.Actions(
-                selectionChanged: { model.selection = $0 },
-                sortChanged: { model.setSort($0) },
-                open: { model.open($0) },
-                goBack: { model.goBack() },
-                goForward: { model.goForward() },
-                goUp: { model.goUp() },
-                reload: { model.reload() }
+            model: model,
+            state: FileTableView.State(
+                folder: folder,
+                items: model.items,
+                selection: model.selection,
+                sort: model.sort,
+                isLocalVolume: model.isLocalVolume,
+                focusRequests: model.listFocusRequests,
+                cutURLs: model.clipboard.cutURLs,
+                renameRequest: model.renameRequest
             )
         )
         .overlay { placeholder }

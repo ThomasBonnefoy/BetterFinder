@@ -3,28 +3,26 @@ import BetterFinderCore
 import SwiftUI
 
 /// The details list of a folder: an AppKit table, for sortable columns,
-/// fast scrolling in big folders and keyboard handling.
+/// fast scrolling in big folders, in-place renaming and keyboard handling.
 struct FileTableView: NSViewRepresentable {
-    struct Actions {
-        var selectionChanged: (Set<URL>) -> Void
-        var sortChanged: (FileSort) -> Void
-        var open: ([FileItem]) -> Void
-        var goBack: () -> Void
-        var goForward: () -> Void
-        var goUp: () -> Void
-        var reload: () -> Void
+    /// What the table shows. Passed by value so that SwiftUI refreshes the
+    /// table whenever one of these changes.
+    struct State {
+        var folder: URL
+        var items: [FileItem]
+        var selection: Set<URL>
+        var sort: FileSort
+        var isLocalVolume: Bool
+        var focusRequests: Int
+        var cutURLs: Set<URL>
+        var renameRequest: RenameRequest?
     }
 
-    var folder: URL
-    var items: [FileItem]
-    var selection: Set<URL>
-    var sort: FileSort
-    var isLocalVolume: Bool
-    var focusRequests: Int
-    var actions: Actions
+    let model: BrowserModel
+    var state: State
 
     func makeCoordinator() -> FileTableCoordinator {
-        FileTableCoordinator(actions: actions)
+        FileTableCoordinator(model: model)
     }
 
     func makeNSView(context: Context) -> NSScrollView {
@@ -61,15 +59,7 @@ struct FileTableView: NSViewRepresentable {
     }
 
     func updateNSView(_ scrollView: NSScrollView, context: Context) {
-        context.coordinator.actions = actions
-        context.coordinator.update(
-            folder: folder,
-            items: items,
-            selection: selection,
-            sort: sort,
-            isLocalVolume: isLocalVolume,
-            focusRequests: focusRequests
-        )
+        context.coordinator.update(state)
     }
 }
 
@@ -123,12 +113,40 @@ enum FileColumn: String, CaseIterable {
     }
 }
 
-/// Table view that lets its coordinator handle keys first.
+/// Table view that lets its coordinator handle keys first, and that answers
+/// the Edit menu (Cut, Copy, Paste, Delete) for the selected files.
 final class FileTable: NSTableView {
-    var keyHandler: ((NSEvent) -> Bool)?
+    weak var coordinator: FileTableCoordinator?
 
     override func keyDown(with event: NSEvent) {
-        if keyHandler?(event) == true { return }
+        if coordinator?.handleKey(event) == true { return }
         super.keyDown(with: event)
+    }
+
+    @objc func copy(_ sender: Any?) {
+        coordinator?.model.copySelection()
+    }
+
+    @objc func cut(_ sender: Any?) {
+        coordinator?.model.cutSelection()
+    }
+
+    @objc func paste(_ sender: Any?) {
+        coordinator?.model.paste()
+    }
+
+    @objc func delete(_ sender: Any?) {
+        coordinator?.model.trashSelection()
+    }
+
+    override func validateUserInterfaceItem(_ item: any NSValidatedUserInterfaceItem) -> Bool {
+        switch item.action {
+        case #selector(copy(_:)), #selector(cut(_:)), #selector(delete(_:)):
+            return !selectedRowIndexes.isEmpty
+        case #selector(paste(_:)):
+            return coordinator?.model.canPaste ?? false
+        default:
+            return super.validateUserInterfaceItem(item)
+        }
     }
 }
