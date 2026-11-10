@@ -4,6 +4,20 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et les n
 
 ## [Non publié]
 
+## [0.4.0] - 2026-11-10
+
+L'arborescence dans la barre latérale.
+
+### Ajouté
+- Chaque ligne de la barre latérale (favoris, lecteurs réseau connectés, volumes) se déplie avec sa flèche pour montrer ses sous-dossiers, qui se déplient à leur tour. Un clic sur un dossier l'ouvre dans la liste.
+- Les sous-dossiers ne sont lus qu'au moment où une ligne est dépliée. La flèche disparaît quand un dossier n'a pas de sous-dossier.
+- Le dossier affiché dans la fenêtre est surligné dans l'arborescence quand il y est visible.
+- Option « Développer jusqu'au dossier ouvert » du menu Présentation : l'arborescence se déplie toute seule jusqu'au dossier affiché. Désactivée par défaut, comme dans l'Explorateur.
+- L'arborescence suit les dossiers créés, renommés ou supprimés dans la liste ; « Actualiser » relit aussi les dossiers dépliés.
+- Les dossiers masqués apparaissent dans l'arborescence quand les fichiers masqués sont affichés.
+- Clic droit sur un dossier de l'arborescence : ouvrir, copier le chemin d'accès, afficher dans le Finder.
+- Un lecteur réseau hors ligne garde sa ligne, sans flèche : rien n'est lu sur un serveur injoignable.
+
 ## [0.3.0] - 2026-11-10
 
 Les opérations sur les fichiers.

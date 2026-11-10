@@ -7,6 +7,7 @@ L'idée de départ : garder les **lecteurs réseau toujours visibles dans la bar
 ## Fonctions
 
 - **Lecteurs réseau toujours visibles** : chaque lecteur garde sa place dans la barre latérale et montre son état (connecté, disponible, hors ligne). Il se reconnecte tout seul quand le serveur répond de nouveau, si l'option est cochée.
+- **Arborescence dans la barre latérale** : chaque favori, lecteur ou volume se déplie pour montrer ses sous-dossiers ; l'option « Développer jusqu'au dossier ouvert » (menu Présentation) la fait suivre le dossier affiché
 - Liste détaillée triable (nom, date de modification, type, taille), dossiers en premier
 - Couper, copier, coller, renommer, corbeille, nouveau dossier et nouveau document, avec annulation ; rien n'est jamais écrasé
 - Menu contextuel au clic droit
@@ -86,6 +87,6 @@ xattr -dr com.apple.quarantine BetterFinder.app
 
 ## Organisation du code
 
-- `Sources/BetterFinderCore` : la logique (lecture des dossiers, tri, historique de navigation, analyse des chemins, lecteurs réseau, opérations sur les fichiers), couverte par des tests.
+- `Sources/BetterFinderCore` : la logique (lecture des dossiers, tri, historique de navigation, analyse des chemins, arborescence de la barre latérale, lecteurs réseau, opérations sur les fichiers), couverte par des tests.
 - `Sources/BetterFinder` : l'interface (SwiftUI pour la fenêtre, AppKit pour la liste de fichiers).
 - `scripts/` : construction du `.app`, installation, archive de release.
