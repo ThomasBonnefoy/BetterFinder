@@ -1,13 +1,16 @@
 #!/bin/bash
 # Builds BetterFinder and assembles dist/BetterFinder.app (ad hoc signed).
-# Usage: scripts/bundle.sh [release|debug]
+# Usage: scripts/bundle.sh [release|debug] [output folder]
+# The output folder defaults to dist/. Building elsewhere leaves a running
+# copy of dist/BetterFinder.app untouched.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 CONFIG="${1:-release}"
 VERSION="$(tr -d '[:space:]' < VERSION)"
 BUILD="$(git rev-list --count HEAD 2>/dev/null || echo 1)"
-APP="dist/BetterFinder.app"
+OUT="${2:-dist}"
+APP="$OUT/BetterFinder.app"
 
 swift build -c "$CONFIG"
 BIN="$(swift build -c "$CONFIG" --show-bin-path)"
