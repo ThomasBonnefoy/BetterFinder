@@ -6,8 +6,23 @@ struct BrowserCommands: Commands {
 
     var body: some Commands {
         CommandGroup(after: .newItem) {
+            Button("Nouveau dossier") { model?.newFolder() }
+                .keyboardShortcut("n", modifiers: [.command, .shift])
+                .disabled(model == nil)
+            Button("Nouveau document texte") { model?.newTextFile() }
+                .disabled(model == nil)
+            Divider()
             Button("Ajouter un lecteur réseau…") { model?.driveEditor = DriveEditorRequest() }
                 .keyboardShortcut("k")
+                .disabled(model == nil)
+        }
+
+        CommandGroup(after: .pasteboard) {
+            Divider()
+            Button("Renommer") { model?.renameSelection() }
+                .disabled(model == nil)
+            Button("Copier le chemin d'accès") { model?.copyPathOfSelection() }
+                .keyboardShortcut("c", modifiers: [.command, .shift])
                 .disabled(model == nil)
         }
 
