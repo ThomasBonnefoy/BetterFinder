@@ -3,7 +3,6 @@ import SwiftUI
 
 @main
 struct BetterFinderApp: App {
-    @NSApplicationDelegateAdaptor private var appDelegate: AppDelegate
     @State private var volumeStore = VolumeStore()
     @State private var driveMonitor = DriveMonitor(store: LaunchOptions.driveStore)
 

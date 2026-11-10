@@ -10,7 +10,7 @@ Les onglets.
 
 ### Ajouté
 - Onglets dans la fenêtre, avec la barre d'onglets de macOS (la même que celle du Finder) : chaque onglet a son dossier, son historique et sa sélection.
-- Nouvel onglet avec `Cmd+T` ou le bouton « + » de la barre d'outils, toujours visible. La barre d'onglets n'apparaît que lorsqu'il y a plusieurs onglets. Un nouvel onglet s'ouvre sur le dossier personnel, juste après l'onglet courant.
+- Nouvel onglet avec `Cmd+T` ou le bouton « + » de la barre d'outils, toujours visible (la barre d'onglets n'a pas de « + » à elle). La barre d'onglets n'apparaît que lorsqu'il y a plusieurs onglets. Un nouvel onglet s'ouvre sur le dossier personnel, juste après l'onglet courant.
 - « Ouvrir dans un nouvel onglet » au clic droit sur un dossier : dans la liste (un onglet par dossier sélectionné), dans l'arborescence, sur un favori, un volume ou un lecteur réseau connecté.
 - `Cmd+Entrée` ou `Cmd+double-clic` ouvre un dossier dans un nouvel onglet.
 - `Cmd+W` ferme l'onglet ; `Ctrl+Tab` et `Ctrl+Maj+Tab` passent d'un onglet à l'autre. Un onglet se déplace à la souris, se détache en fenêtre ou rejoint une autre fenêtre (menu Fenêtre).

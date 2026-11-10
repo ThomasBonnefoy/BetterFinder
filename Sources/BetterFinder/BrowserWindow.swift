@@ -41,7 +41,7 @@ struct BrowserWindow: View {
                 ToolbarItemGroup(placement: .primaryAction) {
                     Button("Actualiser", systemImage: "arrow.clockwise") { model.reload() }
                         .help("Actualiser")
-                    // Always there: macOS hides the tab bar, and its own "+",
+                    // Always there, unlike the tab bar, which macOS hides
                     // while the window has a single tab.
                     Button("Nouvel onglet", systemImage: "plus") { model.newTab() }
                         .help("Nouvel onglet")
@@ -51,8 +51,9 @@ struct BrowserWindow: View {
         .focusedSceneValue(\.browserModel, model)
         .background(WindowReader { window in
             // Before the window shows: a tab must not appear on its own first.
+            // First: the tab bar decides about its "+" when it is created.
+            WindowTabs.removeNewTabButton(from: window)
             WindowTabs.adopt(window)
-            WindowTabs.register(window) { [model] in model.newTab() }
             DispatchQueue.main.async { self.window = window }
         })
         .task {

@@ -13,7 +13,6 @@ enum WindowTabs {
 
     private static var pendingFolders: [URL] = []
     private static var pendingHosts: [WeakWindow] = []
-    private static var newTabActions = NSMapTable<NSWindow, NewTabAction>.weakToStrongObjects()
 
     /// Announces a window about to be opened: it will show `folder`, as a tab
     /// of `host`.
@@ -37,36 +36,47 @@ enum WindowTabs {
         host.addTabbedWindow(window, ordered: .above)
     }
 
-    /// Tells what the "+" button of a window's tab bar does.
-    static func register(_ window: NSWindow, newTab: @escaping @MainActor () -> Void) {
-        newTabActions.setObject(NewTabAction(run: newTab), forKey: window)
-    }
+    // MARK: - The tab bar's "+" button
 
-    /// Opens a new tab in a window. Returns false when it is not a browser
-    /// window.
-    @discardableResult
-    static func newTab(in window: NSWindow?) -> Bool {
-        guard let window, let action = newTabActions.object(forKey: window) else { return false }
-        action.run()
-        return true
+    private static let newWindowForTab = #selector(NSResponder.newWindowForTab(_:))
+
+    /// Removes the "+" button from the tab bar a window may show: the toolbar
+    /// has a "new tab" button that is always visible, the tab bar one would
+    /// be a second one.
+    ///
+    /// AppKit draws that button when the window's controller answers
+    /// `newWindowForTab:`, and SwiftUI's controller does. There is no setting
+    /// for it, so the controller is given a subclass, made on the spot, that
+    /// says it does not.
+    static func removeNewTabButton(from window: NSWindow) {
+        guard let controller = window.windowController,
+              controller.responds(to: newWindowForTab),
+              let original = object_getClass(controller)
+        else { return }
+
+        let name = "BetterFinderNoNewTabButton_\(NSStringFromClass(original))"
+        if let existing = NSClassFromString(name) {
+            object_setClass(controller, existing)
+            return
+        }
+
+        let selector = #selector(NSObject.responds(to:))
+        guard let method = class_getInstanceMethod(original, selector),
+              let subclass = objc_allocateClassPair(original, name, 0)
+        else { return }
+        typealias RespondsTo = @convention(c) (AnyObject, Selector, Selector) -> Bool
+        let inherited = unsafeBitCast(method_getImplementation(method), to: RespondsTo.self)
+        let hidden = newWindowForTab
+        let answer: @convention(block) (AnyObject, Selector) -> Bool = { object, asked in
+            asked == hidden ? false : inherited(object, selector, asked)
+        }
+        class_addMethod(subclass, selector, imp_implementationWithBlock(answer), method_getTypeEncoding(method))
+        objc_registerClassPair(subclass)
+        object_setClass(controller, subclass)
     }
 
     private struct WeakWindow {
         weak var window: NSWindow?
-    }
-
-    private final class NewTabAction {
-        let run: @MainActor () -> Void
-        init(run: @escaping @MainActor () -> Void) { self.run = run }
-    }
-}
-
-/// Gives the "+" button to the tab bar: AppKit shows it when something in
-/// the responder chain answers `newWindowForTab`.
-@MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate {
-    @objc func newWindowForTab(_ sender: Any?) {
-        WindowTabs.newTab(in: NSApp.keyWindow ?? NSApp.mainWindow)
     }
 }
 
