@@ -8,6 +8,8 @@ L'idée de départ : garder les **lecteurs réseau toujours visibles dans la bar
 
 - **Lecteurs réseau toujours visibles** : chaque lecteur garde sa place dans la barre latérale et montre son état (connecté, disponible, hors ligne). Il se reconnecte tout seul quand le serveur répond de nouveau, si l'option est cochée.
 - Liste détaillée triable (nom, date de modification, type, taille), dossiers en premier
+- Couper, copier, coller, renommer, corbeille, nouveau dossier et nouveau document, avec annulation ; rien n'est jamais écrasé
+- Menu contextuel au clic droit
 - Barre d'adresse : fil d'Ariane cliquable, ou chemin à saisir (`Cmd+L`)
 - Précédent, suivant, dossier parent
 - Raccourcis de l'Explorateur Windows adaptés au Mac
@@ -34,6 +36,13 @@ Le mot de passe est demandé par macOS à la première connexion et rangé dans 
 | Dossier précédent | `Retour arrière`, `Option+←` ou `Cmd+[` |
 | Dossier suivant | `Option+→` ou `Cmd+]` |
 | Dossier parent | `Option+↑` ou `Cmd+↑` |
+| Couper, copier, coller | `Cmd+X`, `Cmd+C`, `Cmd+V` |
+| Renommer | `F2` |
+| Mettre à la corbeille | `Suppr` ou `Cmd+Retour arrière` |
+| Supprimer définitivement | `Maj+Suppr` ou `Cmd+Option+Retour arrière` |
+| Nouveau dossier | `Cmd+Maj+N` |
+| Annuler, rétablir | `Cmd+Z`, `Cmd+Maj+Z` |
+| Copier le chemin d'accès | `Cmd+Maj+C` |
 | Modifier l'adresse | `Cmd+L` |
 | Ajouter un lecteur réseau | `Cmd+K` |
 | Actualiser | `Cmd+R` ou `F5` |
@@ -77,6 +86,6 @@ xattr -dr com.apple.quarantine BetterFinder.app
 
 ## Organisation du code
 
-- `Sources/BetterFinderCore` : la logique (lecture des dossiers, tri, historique de navigation, analyse des chemins, lecteurs réseau), couverte par des tests.
+- `Sources/BetterFinderCore` : la logique (lecture des dossiers, tri, historique de navigation, analyse des chemins, lecteurs réseau, opérations sur les fichiers), couverte par des tests.
 - `Sources/BetterFinder` : l'interface (SwiftUI pour la fenêtre, AppKit pour la liste de fichiers).
 - `scripts/` : construction du `.app`, installation, archive de release.
