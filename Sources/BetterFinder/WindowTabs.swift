@@ -1,4 +1,5 @@
 import AppKit
+import BetterFinderCore
 import SwiftUI
 
 /// Opens browser windows as tabs of an existing window.
@@ -11,19 +12,19 @@ enum WindowTabs {
     /// Identifier of the browser window scene.
     static let sceneID = "browser"
 
-    private static var pendingFolders: [URL] = []
+    private static var pendingLocations: [BrowserLocation] = []
     private static var pendingHosts: [WeakWindow] = []
 
-    /// Announces a window about to be opened: it will show `folder`, as a tab
-    /// of `host`.
-    static func request(folder: URL, in host: NSWindow?) {
-        pendingFolders.append(folder)
+    /// Announces a window about to be opened: it will show `location`, as a
+    /// tab of `host`.
+    static func request(_ location: BrowserLocation, in host: NSWindow?) {
+        pendingLocations.append(location)
         pendingHosts.append(WeakWindow(window: host))
     }
 
-    /// The folder a window that just opened was asked to show, if any.
-    static func takeFolder() -> URL? {
-        pendingFolders.isEmpty ? nil : pendingFolders.removeFirst()
+    /// What a window that just opened was asked to show, if anything.
+    static func takeLocation() -> BrowserLocation? {
+        pendingLocations.isEmpty ? nil : pendingLocations.removeFirst()
     }
 
     /// Puts a window that just opened in the tab bar of the window that

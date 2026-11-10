@@ -59,12 +59,19 @@ struct BrowserWindow: View {
         .task {
             driveMonitor.start()
             model.attach(driveMonitor)
-            model.tabOpener = { folder in
-                WindowTabs.request(folder: folder, in: window)
+            model.tabOpener = { location in
+                WindowTabs.request(location, in: window)
                 openWindow(id: WindowTabs.sceneID)
             }
-            let tabFolder = WindowTabs.takeFolder()
-            model.start(at: tabFolder, onComputer: tabFolder == nil && LaunchOptions.takeStartsOnComputer())
+            switch WindowTabs.takeLocation() {
+            case .folder(let folder):
+                model.start(at: folder)
+            case .computer:
+                model.start(onComputer: true)
+            case .drive, nil:
+                // Not a tab: a window, which starts where the app was asked to.
+                model.start(onComputer: LaunchOptions.takeStartsOnComputer())
+            }
             if let address = LaunchOptions.takeShareAddress() {
                 _ = model.submitAddress(address)
             }

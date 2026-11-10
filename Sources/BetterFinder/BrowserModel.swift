@@ -47,8 +47,9 @@ final class BrowserModel {
     let clipboard: FileClipboard
     /// Folder tree of the sidebar. The tabs of the app share one.
     let sidebarTree: SidebarTreeModel
-    /// Opens a folder in a new tab. Set by the window.
-    @ObservationIgnored var tabOpener: (@MainActor (URL) -> Void)?
+    /// Opens a folder, or the computer's overview, in a new tab. Set by the
+    /// window.
+    @ObservationIgnored var tabOpener: (@MainActor (BrowserLocation) -> Void)?
 
     @ObservationIgnored private var allItems: [FileItem] = []
     @ObservationIgnored private var loadGeneration = 0
@@ -140,13 +141,14 @@ final class BrowserModel {
 
     // MARK: - Tabs
 
-    /// A new tab on the home folder (Ctrl+T in Explorer).
+    /// A new tab on the computer's overview (Ctrl+T in Explorer opens its
+    /// home page).
     func newTab() {
-        openInNewTab(FileManager.default.homeDirectoryForCurrentUser)
+        tabOpener?(.computer)
     }
 
     func openInNewTab(_ url: URL) {
-        tabOpener?(Self.normalized(url))
+        tabOpener?(.folder(Self.normalized(url)))
     }
 
     /// True when the selection is made of folders only.

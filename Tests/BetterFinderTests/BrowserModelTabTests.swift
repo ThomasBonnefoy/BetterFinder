@@ -25,23 +25,23 @@ import BetterFinderCore
     }
 
     /// A model whose new tabs are recorded instead of opened.
-    private func startedModel(at url: URL) async throws -> (BrowserModel, () -> [URL]) {
+    private func startedModel(at url: URL) async throws -> (BrowserModel, () -> [BrowserLocation]) {
         let model = BrowserModel(start: url)
-        var opened: [URL] = []
+        var opened: [BrowserLocation] = []
         model.tabOpener = { opened.append($0) }
         model.start()
         try await loaded(model)
         return (model, { opened })
     }
 
-    @Test func newTabOpensTheHomeFolder() async throws {
+    @Test func newTabOpensTheComputerOverview() async throws {
         let root = try makeTree()
         defer { try? FileManager.default.removeItem(at: root) }
         let (model, opened) = try await startedModel(at: root)
 
         model.newTab()
 
-        #expect(opened() == [BrowserModel.normalized(FileManager.default.homeDirectoryForCurrentUser)])
+        #expect(opened() == [.computer])
         // The current tab does not move.
         #expect(model.currentURL == root)
     }
@@ -55,7 +55,7 @@ import BetterFinderCore
         #expect(model.canOpenSelectionInNewTabs)
         model.openSelectionInNewTabs()
 
-        #expect(opened() == [root.appending(path: "Alpha"), root.appending(path: "Beta")])
+        #expect(opened() == [.folder(root.appending(path: "Alpha")), .folder(root.appending(path: "Beta"))])
         #expect(model.currentURL == root)
     }
 
@@ -103,12 +103,12 @@ import BetterFinderCore
     }
 
     @Test func pendingTabRequestsAreServedInOrder() {
-        let a = URL(filePath: "/tmp/a"), b = URL(filePath: "/tmp/b")
-        #expect(WindowTabs.takeFolder() == nil)
-        WindowTabs.request(folder: a, in: nil)
-        WindowTabs.request(folder: b, in: nil)
-        #expect(WindowTabs.takeFolder() == a)
-        #expect(WindowTabs.takeFolder() == b)
-        #expect(WindowTabs.takeFolder() == nil)
+        let a = BrowserLocation.folder(URL(filePath: "/tmp/a"))
+        #expect(WindowTabs.takeLocation() == nil)
+        WindowTabs.request(a, in: nil)
+        WindowTabs.request(.computer, in: nil)
+        #expect(WindowTabs.takeLocation() == a)
+        #expect(WindowTabs.takeLocation() == .computer)
+        #expect(WindowTabs.takeLocation() == nil)
     }
 }
