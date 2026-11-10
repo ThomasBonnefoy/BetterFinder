@@ -4,6 +4,19 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et les n
 
 ## [Non publié]
 
+## [0.6.0] - 2026-11-10
+
+La vue « Ce Mac », l'équivalent de « Ce PC ».
+
+### Ajouté
+- Page « Ce Mac » : les dossiers principaux, les disques et volumes avec une barre d'occupation et l'espace libre (« 232 Go libres sur 494 Go »), et les lecteurs réseau avec leur état (connecté, disponible, hors ligne).
+- Un clic sélectionne une tuile, un double-clic l'ouvre. Un lecteur réseau disponible se connecte à l'ouverture, comme depuis la barre latérale.
+- « Ce Mac » en tête de la barre latérale, dans le menu Aller (`Cmd+Maj+M`), et en saisissant « Ce Mac » dans la barre d'adresse.
+- Le bouton « dossier parent » mène à « Ce Mac » depuis la racine d'un disque ou d'un lecteur, comme dans l'Explorateur.
+- Clic droit sur une tuile : ouvrir, ouvrir dans un nouvel onglet, copier le chemin d'accès, afficher dans le Finder ; pour un lecteur réseau : déconnecter, modifier.
+- « Actualiser » relit l'espace libre des disques et l'état des lecteurs.
+- Option de lancement `-StartLocation "Ce Mac"`.
+
 ## [0.5.0] - 2026-11-10
 
 Les onglets.
