@@ -43,8 +43,10 @@ final class BrowserModel {
     @ObservationIgnored var undoManager: UndoManager?
 
     let clipboard: FileClipboard
-    /// Folder tree of the sidebar.
-    let sidebarTree = SidebarTreeModel()
+    /// Folder tree of the sidebar. The tabs of the app share one.
+    let sidebarTree: SidebarTreeModel
+    /// Opens a folder in a new tab. Set by the window.
+    @ObservationIgnored var tabOpener: (@MainActor (URL) -> Void)?
 
     @ObservationIgnored private var allItems: [FileItem] = []
     @ObservationIgnored private var loadGeneration = 0
@@ -61,10 +63,12 @@ final class BrowserModel {
 
     init(
         start: URL = FileManager.default.homeDirectoryForCurrentUser,
-        clipboard: FileClipboard = .shared
+        clipboard: FileClipboard = .shared,
+        sidebarTree: SidebarTreeModel = SidebarTreeModel()
     ) {
         history = NavigationHistory(start: .folder(Self.normalized(start)))
         self.clipboard = clipboard
+        self.sidebarTree = sidebarTree
     }
 
     // MARK: - Location
@@ -109,10 +113,40 @@ final class BrowserModel {
     }
 
     /// Loads the first folder. Called once, when the window appears.
-    func start() {
+    /// `folder` replaces the one given at creation: a tab is told what to
+    /// show after its window has been created.
+    func start(at folder: URL? = nil) {
         guard !hasStarted else { return }
         hasStarted = true
+        if let folder {
+            history = NavigationHistory(start: .folder(Self.normalized(folder)))
+        }
         load(resetContent: true)
+    }
+
+    // MARK: - Tabs
+
+    /// A new tab on the home folder (Ctrl+T in Explorer).
+    func newTab() {
+        openInNewTab(FileManager.default.homeDirectoryForCurrentUser)
+    }
+
+    func openInNewTab(_ url: URL) {
+        tabOpener?(Self.normalized(url))
+    }
+
+    /// True when the selection is made of folders only.
+    var canOpenSelectionInNewTabs: Bool {
+        let selected = selectedItems
+        return !selected.isEmpty && selected.allSatisfy(\.isBrowsable)
+    }
+
+    /// Opens every selected folder in a tab of its own.
+    func openSelectionInNewTabs() {
+        guard canOpenSelectionInNewTabs else { return }
+        for item in selectedItems {
+            openInNewTab(item.url)
+        }
     }
 
     func navigate(to url: URL, selecting itemToSelect: URL? = nil) {

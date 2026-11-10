@@ -7,6 +7,10 @@ struct BrowserCommands: Commands {
 
     var body: some Commands {
         CommandGroup(after: .newItem) {
+            Button("Nouvel onglet") { model?.newTab() }
+                .keyboardShortcut("t")
+                .disabled(model == nil)
+            Divider()
             Button("Nouveau dossier") { model?.newFolder() }
                 .keyboardShortcut("n", modifiers: [.command, .shift])
                 .disabled(model == nil)

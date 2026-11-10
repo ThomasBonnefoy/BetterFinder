@@ -166,6 +166,11 @@ final class FileTableCoordinator: NSObject, NSTableViewDataSource, NSTableViewDe
         guard let table else { return }
         let row = table.clickedRow
         guard items.indices.contains(row) else { return }
+        // Like in the Finder, Command opens a folder in a new tab.
+        if NSApp.currentEvent?.modifierFlags.contains(.command) == true, items[row].isBrowsable {
+            model.openInNewTab(items[row].url)
+            return
+        }
         if table.selectedRowIndexes.contains(row) {
             model.open(selectedItems(in: table))
         } else {
@@ -231,6 +236,10 @@ final class FileTableCoordinator: NSObject, NSTableViewDataSource, NSTableViewDe
 
         if modifiers == .command {
             switch key {
+            case KeyCode.return, KeyCode.keypadEnter:
+                guard model.canOpenSelectionInNewTabs else { return false }
+                model.openSelectionInNewTabs()
+                return true
             case KeyCode.downArrow:
                 guard hasSelection else { return false }
                 model.open(selectedItems(in: table))
@@ -350,6 +359,9 @@ final class FileTableCoordinator: NSObject, NSTableViewDataSource, NSTableViewDe
 
     private func buildItemMenu(_ menu: NSMenu, selectionCount: Int) {
         menu.addItem(item("Ouvrir", #selector(menuOpen)))
+        if model.canOpenSelectionInNewTabs {
+            menu.addItem(item("Ouvrir dans un nouvel onglet", #selector(menuOpenInNewTab)))
+        }
         menu.addItem(.separator())
         menu.addItem(item("Couper", #selector(menuCut)))
         menu.addItem(item("Copier", #selector(menuCopy)))
@@ -384,6 +396,7 @@ final class FileTableCoordinator: NSObject, NSTableViewDataSource, NSTableViewDe
     }
 
     @objc private func menuOpen() { model.openSelection() }
+    @objc private func menuOpenInNewTab() { model.openSelectionInNewTabs() }
     @objc private func menuCut() { model.cutSelection() }
     @objc private func menuCopy() { model.copySelection() }
     @objc private func menuPaste() { model.paste() }

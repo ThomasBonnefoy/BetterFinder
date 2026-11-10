@@ -56,6 +56,7 @@ struct FolderRow: View {
             .tag(SidebarItem.folder(node))
             .contextMenu {
                 Button("Ouvrir") { model.navigate(to: folder.url) }
+                Button("Ouvrir dans un nouvel onglet") { model.openInNewTab(folder.url) }
                 Divider()
                 Button("Copier le chemin d'accès") { model.clipboard.copyText(folder.url.path) }
                 Button("Afficher dans le Finder") {

@@ -28,6 +28,7 @@ struct SidebarView: View {
                         Label(favorite.name, systemImage: favorite.symbol)
                             .sidebarRow { model.navigate(to: favorite.url) }
                             .tag(SidebarItem.place(favorite.url))
+                            .contextMenu { placeMenu(for: favorite.url) }
                     }
                 }
             }
@@ -72,6 +73,7 @@ struct SidebarView: View {
                         Label(volume.name, systemImage: symbol(for: volume))
                             .sidebarRow { model.navigate(to: url) }
                             .tag(SidebarItem.place(url))
+                            .contextMenu { placeMenu(for: url) }
                     }
                 }
             }
@@ -116,8 +118,9 @@ struct SidebarView: View {
         let status = driveMonitor.status(of: drive.id)
         let hasMount = driveMonitor.volumeRoots[drive.id] != nil
 
-        if case .mounted = status {
+        if case .mounted(let folder) = status {
             Button("Ouvrir") { model.openDrive(drive.id) }
+            Button("Ouvrir dans un nouvel onglet") { model.openInNewTab(folder) }
         } else {
             Button("Connecter") { model.openDrive(drive.id) }
                 .disabled(status == .connecting)
@@ -136,6 +139,12 @@ struct SidebarView: View {
     private var localVolumes: [VolumeInfo] {
         let driveRoots = Set(driveMonitor.volumeRoots.values.map(\.path))
         return volumeStore.volumes.filter { !driveRoots.contains($0.url.path) }
+    }
+
+    @ViewBuilder
+    private func placeMenu(for url: URL) -> some View {
+        Button("Ouvrir") { model.navigate(to: url) }
+        Button("Ouvrir dans un nouvel onglet") { model.openInNewTab(url) }
     }
 
     // MARK: - Folder tree

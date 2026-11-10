@@ -3,7 +3,10 @@ import SwiftUI
 
 /// One browser window: sidebar on the left, file list on the right.
 struct BrowserWindow: View {
-    @State private var model = BrowserModel(start: LaunchOptions.startFolder)
+    @State private var model = BrowserModel(start: LaunchOptions.startFolder, sidebarTree: .shared)
+    /// The AppKit window, which new tabs are attached to.
+    @State private var window: NSWindow?
+    @Environment(\.openWindow) private var openWindow
     @Environment(VolumeStore.self) private var volumeStore
     @Environment(DriveMonitor.self) private var driveMonitor
     @Environment(\.undoManager) private var undoManager
@@ -42,10 +45,20 @@ struct BrowserWindow: View {
             }
         }
         .focusedSceneValue(\.browserModel, model)
+        .background(WindowReader { window in
+            // Before the window shows: a tab must not appear on its own first.
+            WindowTabs.adopt(window)
+            WindowTabs.register(window) { [model] in model.newTab() }
+            DispatchQueue.main.async { self.window = window }
+        })
         .task {
             driveMonitor.start()
             model.attach(driveMonitor)
-            model.start()
+            model.tabOpener = { folder in
+                WindowTabs.request(folder: folder, in: window)
+                openWindow(id: WindowTabs.sceneID)
+            }
+            model.start(at: WindowTabs.takeFolder())
             if let address = LaunchOptions.takeShareAddress() {
                 _ = model.submitAddress(address)
             }

@@ -7,6 +7,10 @@ import Observation
 @MainActor
 @Observable
 final class SidebarTreeModel {
+    /// The tree of the app's windows: a row unfolded in a tab is unfolded in
+    /// the others too.
+    static let shared = SidebarTreeModel()
+
     private(set) var tree = FolderTree()
     /// Folders being read.
     private(set) var loading: Set<URL> = []
