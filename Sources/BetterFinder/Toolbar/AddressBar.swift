@@ -66,6 +66,8 @@ struct AddressBar: View {
     /// starts at the drive, under the name it has in the sidebar.
     private var currentCrumbs: [Crumb] {
         switch model.location {
+        case .computer:
+            return [Crumb(name: BrowserModel.computerName, action: {})]
         case .drive(let id):
             let name = model.driveMonitor?.drive(id)?.name ?? "Lecteur réseau"
             return [Crumb(name: name, action: { model.openDrive(id) })]

@@ -3,6 +3,8 @@ import SwiftUI
 
 /// A row of the sidebar.
 enum SidebarItem: Hashable {
+    /// The computer's overview.
+    case computer
     case place(URL)
     case drive(UUID)
     /// A folder of the tree, below one of the rows above.
@@ -22,6 +24,10 @@ struct SidebarView: View {
 
     var body: some View {
         List(selection: selection) {
+            Label(BrowserModel.computerName, systemImage: "desktopcomputer")
+                .sidebarRow { model.showComputer() }
+                .tag(SidebarItem.computer)
+
             Section("Favoris") {
                 ForEach(favorites) { favorite in
                     FolderBranch(node: FolderTreeNode(root: favorite.url, url: favorite.url), model: model) {
@@ -70,7 +76,7 @@ struct SidebarView: View {
                 ForEach(localVolumes) { volume in
                     let url = BrowserModel.normalized(volume.url)
                     FolderBranch(node: FolderTreeNode(root: url, url: url), model: model) {
-                        Label(volume.name, systemImage: symbol(for: volume))
+                        Label(volume.name, systemImage: volume.symbolName)
                             .sidebarRow { model.navigate(to: url) }
                             .tag(SidebarItem.place(url))
                             .contextMenu { placeMenu(for: url) }
@@ -135,10 +141,8 @@ struct SidebarView: View {
         Button("Retirer de la barre latérale…", role: .destructive) { driveToRemove = drive }
     }
 
-    /// Mounted volumes, minus the ones already listed as network drives.
     private var localVolumes: [VolumeInfo] {
-        let driveRoots = Set(driveMonitor.volumeRoots.values.map(\.path))
-        return volumeStore.volumes.filter { !driveRoots.contains($0.url.path) }
+        volumeStore.volumes(besides: driveMonitor)
     }
 
     @ViewBuilder
@@ -170,6 +174,7 @@ struct SidebarView: View {
             get: { currentItem },
             set: { item in
                 switch item {
+                case .computer: model.showComputer()
                 case .place(let url): model.navigate(to: url)
                 case .drive(let id): model.openDrive(id)
                 case .folder(let node): model.navigate(to: node.url)
@@ -180,6 +185,9 @@ struct SidebarView: View {
     }
 
     private var currentItem: SidebarItem? {
+        if model.isOnComputer {
+            return .computer
+        }
         if let id = model.displayedDriveID {
             return .drive(id)
         }
@@ -198,10 +206,6 @@ struct SidebarView: View {
         return driveMonitor.drive(containing: current).map { .drive($0.id) }
     }
 
-    private func symbol(for volume: VolumeInfo) -> String {
-        if !volume.isLocal { return "externaldrive.connected.to.line.below" }
-        return volume.isEjectable ? "externaldrive" : "internaldrive"
-    }
 }
 
 enum SidebarSettings {

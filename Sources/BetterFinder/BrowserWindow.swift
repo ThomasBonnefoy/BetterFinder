@@ -63,7 +63,8 @@ struct BrowserWindow: View {
                 WindowTabs.request(folder: folder, in: window)
                 openWindow(id: WindowTabs.sceneID)
             }
-            model.start(at: WindowTabs.takeFolder())
+            let tabFolder = WindowTabs.takeFolder()
+            model.start(at: tabFolder, onComputer: tabFolder == nil && LaunchOptions.takeStartsOnComputer())
             if let address = LaunchOptions.takeShareAddress() {
                 _ = model.submitAddress(address)
             }
@@ -151,6 +152,17 @@ enum LaunchOptions {
             }
         }
         return FileManager.default.homeDirectoryForCurrentUser
+    }
+
+    private static var startsOnComputerTaken = false
+
+    /// True when the command line asks for the computer's overview
+    /// (`-StartLocation "Ce Mac"`). Only the first window gets it.
+    static func takeStartsOnComputer() -> Bool {
+        guard !startsOnComputerTaken else { return false }
+        startsOnComputerTaken = true
+        guard let location = startLocation else { return false }
+        return location.compare(BrowserModel.computerName, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
     }
 
     private static var shareAddressTaken = false

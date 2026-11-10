@@ -6,7 +6,9 @@ struct FileListView: View {
     let model: BrowserModel
 
     var body: some View {
-        if let driveID = model.displayedDriveID {
+        if model.isOnComputer {
+            ComputerView(model: model)
+        } else if let driveID = model.displayedDriveID {
             UnavailableDriveView(model: model, driveID: driveID)
         } else if let folder = model.currentURL {
             table(for: folder)

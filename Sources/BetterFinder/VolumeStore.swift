@@ -2,6 +2,22 @@ import AppKit
 import BetterFinderCore
 import Observation
 
+extension VolumeStore {
+    /// Mounted volumes, minus the ones already listed as network drives.
+    func volumes(besides driveMonitor: DriveMonitor) -> [VolumeInfo] {
+        let driveRoots = Set(driveMonitor.volumeRoots.values.map(\.path))
+        return volumes.filter { !driveRoots.contains($0.url.path) }
+    }
+}
+
+extension VolumeInfo {
+    /// SF Symbol that stands for the volume.
+    var symbolName: String {
+        if !isLocal { return "externaldrive.connected.to.line.below" }
+        return isEjectable ? "externaldrive" : "internaldrive"
+    }
+}
+
 /// Mounted volumes, kept up to date as disks are plugged in or ejected.
 @MainActor
 @Observable

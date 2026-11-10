@@ -28,6 +28,8 @@ final class BrowserModel {
     /// the drive's page is shown instead of a list that would never load.
     private(set) var blockedDrive: UUID?
     var selection: Set<URL> = []
+    /// Incremented when the computer's overview is asked to refresh.
+    private(set) var computerRefreshes = 0
     /// Non-nil while the "add or edit a network drive" sheet is open.
     var driveEditor: DriveEditorRequest?
 
@@ -87,8 +89,16 @@ final class BrowserModel {
         return blockedDrive
     }
 
+    /// Name of the computer's overview ("Ce PC" in Explorer).
+    nonisolated static let computerName = "Ce Mac"
+
+    /// True on the computer's overview.
+    var isOnComputer: Bool { location == .computer }
+
     var title: String {
         switch location {
+        case .computer:
+            return Self.computerName
         case .folder(let url):
             return driveMonitor?.driveMounted(at: url)?.name ?? DisplayName.of(url)
         case .drive(let id):
@@ -98,10 +108,9 @@ final class BrowserModel {
 
     var canGoBack: Bool { history.canGoBack }
     var canGoForward: Bool { history.canGoForward }
-    var canGoUp: Bool {
-        guard let url = currentURL else { return false }
-        return url.path != "/"
-    }
+    /// Every folder has something above it: the top of a disk leads to the
+    /// computer's overview.
+    var canGoUp: Bool { currentURL != nil }
 
     /// Gives the window its network drives. Called once, before `start`.
     func attach(_ monitor: DriveMonitor) {
@@ -115,10 +124,12 @@ final class BrowserModel {
     /// Loads the first folder. Called once, when the window appears.
     /// `folder` replaces the one given at creation: a tab is told what to
     /// show after its window has been created.
-    func start(at folder: URL? = nil) {
+    func start(at folder: URL? = nil, onComputer: Bool = false) {
         guard !hasStarted else { return }
         hasStarted = true
-        if let folder {
+        if onComputer {
+            history = NavigationHistory(start: .computer)
+        } else if let folder {
             history = NavigationHistory(start: .folder(Self.normalized(folder)))
         }
         load(resetContent: true)
@@ -180,7 +191,20 @@ final class BrowserModel {
 
     func goUp() {
         guard canGoUp, let url = currentURL else { return }
-        navigate(to: url.deletingLastPathComponent(), selecting: url)
+        if BrowserLocation.isVolumeRoot(url) {
+            // Like Explorer: above a disk is the computer, not a folder.
+            showComputer()
+        } else {
+            navigate(to: url.deletingLastPathComponent(), selecting: url)
+        }
+    }
+
+    /// Shows the computer's overview: main folders, disks, network drives.
+    func showComputer() {
+        endEditingAddress()
+        guard location != .computer else { return }
+        history.go(to: .computer)
+        load(resetContent: true)
     }
 
     func goHome() {
@@ -191,6 +215,10 @@ final class BrowserModel {
         // On a drive's page, "reload" means "try the drive again".
         if let id = displayedDriveID {
             Task { await connectDrive(id) }
+            return
+        }
+        if isOnComputer {
+            computerRefreshes += 1
             return
         }
         sidebarTree.reload()
@@ -238,6 +266,8 @@ final class BrowserModel {
     func driveStatusesChanged() {
         guard let monitor = driveMonitor else { return }
         switch location {
+        case .computer:
+            break
         case .drive(let id):
             // The drive we were waiting for is connected: show its content.
             if case .mounted(let folder) = monitor.status(of: id) {
@@ -491,6 +521,8 @@ final class BrowserModel {
     /// Text put in the address field when editing starts.
     var addressText: String {
         switch location {
+        case .computer:
+            return Self.computerName
         case .folder(let url):
             return url.path
         case .drive(let id):
@@ -511,6 +543,11 @@ final class BrowserModel {
     /// Goes to what was typed in the address bar. Returns false when the
     /// text does not point to an existing file or folder, or to a share.
     func submitAddress(_ text: String) -> Bool {
+        let typed = text.trimmingCharacters(in: .whitespaces)
+        if typed.compare(Self.computerName, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame {
+            showComputer()
+            return true
+        }
         let base = currentURL ?? FileManager.default.homeDirectoryForCurrentUser
         switch PathParser.parse(text, relativeTo: base) {
         case .invalid:

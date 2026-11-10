@@ -53,6 +53,9 @@ struct BrowserCommands: Commands {
                 .keyboardShortcut(.upArrow)
                 .disabled(model == nil)
             Divider()
+            Button(BrowserModel.computerName) { model?.showComputer() }
+                .keyboardShortcut("m", modifiers: [.command, .shift])
+                .disabled(model == nil)
             Button("Dossier personnel") { model?.goHome() }
                 .keyboardShortcut("h", modifiers: [.command, .shift])
                 .disabled(model == nil)

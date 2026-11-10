@@ -7,8 +7,9 @@ struct StatusBar: View {
 
     var body: some View {
         HStack(spacing: 16) {
-            // A drive's page lists nothing: counting items would be noise.
-            if model.displayedDriveID == nil {
+            // A drive's page and the computer's overview list no file:
+            // counting items would be noise.
+            if model.displayedDriveID == nil, !model.isOnComputer {
                 Text(Self.countText(model.items.count))
                 let selected = model.selectedItems
                 if !selected.isEmpty {
