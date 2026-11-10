@@ -6,6 +6,7 @@ struct BrowserWindow: View {
     @State private var model = BrowserModel(start: LaunchOptions.startFolder)
     @Environment(VolumeStore.self) private var volumeStore
     @Environment(DriveMonitor.self) private var driveMonitor
+    @Environment(\.undoManager) private var undoManager
 
     var body: some View {
         NavigationSplitView {
@@ -54,6 +55,32 @@ struct BrowserWindow: View {
         // A drive went online or offline: the window may have to switch
         // between its content and its "unavailable" page.
         .onChange(of: driveMonitor.statuses) { model.driveStatusesChanged() }
+        // File operations are undone from the Edit menu of this window.
+        .onChange(of: undoManager, initial: true) { model.undoManager = undoManager }
+        .alert(
+            model.alert?.title ?? "",
+            isPresented: Binding(get: { model.alert != nil }, set: { if !$0 { model.alert = nil } }),
+            presenting: model.alert
+        ) { _ in
+            Button("OK", role: .cancel) {}
+        } message: { alert in
+            Text(alert.message)
+        }
+        .alert(
+            deleteTitle,
+            isPresented: Binding(
+                get: { model.deleteConfirmation != nil },
+                set: { if !$0 { model.deleteConfirmation = nil } }
+            ),
+            presenting: model.deleteConfirmation
+        ) { confirmation in
+            Button("Supprimer", role: .destructive) { model.deletePermanently(confirmation.urls) }
+            Button("Annuler", role: .cancel) {}
+        } message: { confirmation in
+            Text(confirmation.becauseNoTrash
+                ? "Ce lecteur n'a pas de corbeille. La suppression est immédiate et ne peut pas être annulée."
+                : "Cette action ne peut pas être annulée.")
+        }
         .sheet(item: $model.driveEditor) { request in
             NavigationStack {
                 DriveEditorSheet(request: request) { drive in
@@ -66,6 +93,17 @@ struct BrowserWindow: View {
                 }
             }
         }
+    }
+}
+
+extension BrowserWindow {
+    /// "Supprimer définitivement « a.txt » ?" or "… ces 3 éléments ?"
+    fileprivate var deleteTitle: String {
+        guard let urls = model.deleteConfirmation?.urls else { return "" }
+        if urls.count == 1, let url = urls.first {
+            return "Supprimer définitivement « \(url.lastPathComponent) » ?"
+        }
+        return "Supprimer définitivement ces \(urls.count) éléments ?"
     }
 }
 
