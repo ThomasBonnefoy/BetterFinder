@@ -22,6 +22,9 @@ struct StatusBar: View {
                 }
             }
             Spacer()
+            if let info = model.gitInfo {
+                GitStatusLabel(info: info)
+            }
             if model.isSearchRunning {
                 ProgressView().controlSize(.mini)
                 Text("Recherche…")

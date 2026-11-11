@@ -24,7 +24,8 @@ struct FileListView: View {
             isLocalVolume: model.isLocalVolume,
             focusRequests: model.listFocusRequests,
             cutURLs: model.clipboard.cutURLs,
-            renameRequest: model.renameRequest
+            renameRequest: model.renameRequest,
+            gitStates: model.gitInfo?.states ?? [:]
         )
         return Group {
             switch model.viewMode {

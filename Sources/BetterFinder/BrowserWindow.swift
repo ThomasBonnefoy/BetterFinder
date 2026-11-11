@@ -11,6 +11,7 @@ struct BrowserWindow: View {
     @Environment(DriveMonitor.self) private var driveMonitor
     @Environment(\.undoManager) private var undoManager
     @FocusState private var searchFocused: Bool
+    @AppStorage(AppSettings.showsGitInfoKey) private var showsGitInfo = true
 
     var body: some View {
         NavigationSplitView {
@@ -93,6 +94,12 @@ struct BrowserWindow: View {
         // A drive went online or offline: the window may have to switch
         // between its content and its "unavailable" page.
         .onChange(of: driveMonitor.statuses) { model.driveStatusesChanged() }
+        // Back from a terminal or an editor: files and commits may have
+        // changed without the folder shown being touched.
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            model.refreshGit()
+        }
+        .onChange(of: showsGitInfo) { model.refreshGit() }
         // File operations are undone from the Edit menu of this window.
         .onChange(of: undoManager, initial: true) { model.undoManager = undoManager }
         .alert(

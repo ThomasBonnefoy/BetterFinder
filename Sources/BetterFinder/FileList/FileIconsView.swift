@@ -140,6 +140,7 @@ final class FileIconItem: NSCollectionViewItem {
     private let icon = NSImageView()
     private let label = NSTextField(wrappingLabelWithString: "")
     private let background = NSView()
+    private let badge = GitBadgeView()
     /// Called by a double-click on the item.
     var onOpen: (() -> Void)?
 
@@ -171,7 +172,11 @@ final class FileIconItem: NSCollectionViewItem {
         label.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(label)
 
+        view.addSubview(badge)
+
         NSLayoutConstraint.activate([
+            badge.topAnchor.constraint(equalTo: view.topAnchor, constant: 5),
+            badge.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -6),
             background.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             background.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             background.topAnchor.constraint(equalTo: view.topAnchor),
@@ -190,7 +195,8 @@ final class FileIconItem: NSCollectionViewItem {
     var nameField: NSTextField { label }
 
     @MainActor
-    func configure(with item: FileItem, isLocalVolume: Bool, isCut: Bool) {
+    func configure(with item: FileItem, isLocalVolume: Bool, isCut: Bool, gitState: GitFileState? = nil) {
+        badge.show(gitState, isFolder: item.isBrowsable)
         icon.image = FileIcon.image(for: item, isLocalVolume: isLocalVolume)
         label.stringValue = item.name
         let alpha: CGFloat = isCut ? 0.45 : 1
@@ -262,6 +268,7 @@ final class FileIconsCoordinator: NSObject, NSCollectionViewDataSource, NSCollec
     private var items: [FileItem] = []
     private var isLocalVolume = true
     private var cutURLs: Set<URL> = []
+    private var gitStates: [String: GitFileState] = [:]
     private var focusRequests = 0
     private var hasAppliedFirstState = false
     private var handledRenameRequest: Int?
@@ -308,9 +315,11 @@ final class FileIconsCoordinator: NSObject, NSCollectionViewDataSource, NSCollec
 
         let folderChanged = state.folder != folder
         folder = state.folder
-        if state.items != items || state.cutURLs != cutURLs || state.isLocalVolume != isLocalVolume {
+        if state.items != items || state.cutURLs != cutURLs || state.isLocalVolume != isLocalVolume
+            || state.gitStates != gitStates {
             items = state.items
             cutURLs = state.cutURLs
+            gitStates = state.gitStates
             isLocalVolume = state.isLocalVolume
             collection.reloadData()
         }
@@ -364,7 +373,12 @@ final class FileIconsCoordinator: NSObject, NSCollectionViewDataSource, NSCollec
         let cell = collectionView.makeItem(withIdentifier: FileIconItem.identifier, for: indexPath)
         guard let cell = cell as? FileIconItem, items.indices.contains(indexPath.item) else { return cell }
         let item = items[indexPath.item]
-        cell.configure(with: item, isLocalVolume: isLocalVolume, isCut: cutURLs.contains(item.url))
+        cell.configure(
+            with: item,
+            isLocalVolume: isLocalVolume,
+            isCut: cutURLs.contains(item.url),
+            gitState: gitStates[item.url.path]
+        )
         cell.onOpen = { [weak self] in
             guard let self else { return }
             // Like in the Finder, Command opens a folder in a new tab.

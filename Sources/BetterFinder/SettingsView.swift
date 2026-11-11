@@ -8,6 +8,13 @@ enum AppSettings {
     /// Whether hidden files are shown in new windows.
     static let showsHiddenFilesKey = "ShowsHiddenFiles"
 
+    /// Whether the branch and the changed files of Git repositories are shown.
+    static let showsGitInfoKey = "ShowsGitInfo"
+
+    static var showsGitInfo: Bool {
+        UserDefaults.standard.object(forKey: showsGitInfoKey) as? Bool ?? true
+    }
+
     static var opensOnComputer: Bool {
         UserDefaults.standard.object(forKey: opensOnComputerKey) as? Bool ?? true
     }
@@ -23,6 +30,7 @@ struct SettingsView: View {
     @AppStorage(AppSettings.showsHiddenFilesKey) private var showsHiddenFiles = false
     @AppStorage(ViewMode.defaultsKey) private var viewMode = ViewMode.details.rawValue
     @AppStorage(SidebarSettings.followsLocationKey) private var sidebarFollowsLocation = false
+    @AppStorage(AppSettings.showsGitInfoKey) private var showsGitInfo = true
 
     var body: some View {
         Form {
@@ -42,6 +50,9 @@ struct SettingsView: View {
             }
             Section("Barre latérale") {
                 Toggle("Développer jusqu'au dossier ouvert", isOn: $sidebarFollowsLocation)
+            }
+            Section("Git") {
+                Toggle("Afficher la branche et l'état des fichiers dans les dépôts Git", isOn: $showsGitInfo)
             }
         }
         .formStyle(.grouped)

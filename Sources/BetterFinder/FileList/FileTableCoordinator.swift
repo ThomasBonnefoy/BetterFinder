@@ -14,6 +14,7 @@ final class FileTableCoordinator: NSObject, NSTableViewDataSource, NSTableViewDe
     private var items: [FileItem] = []
     private var isLocalVolume = true
     private var cutURLs: Set<URL> = []
+    private var gitStates: [String: GitFileState] = [:]
     private var focusRequests = 0
     private var hasAppliedFirstState = false
     private var handledRenameRequest: Int?
@@ -86,9 +87,11 @@ final class FileTableCoordinator: NSObject, NSTableViewDataSource, NSTableViewDe
 
         let folderChanged = state.folder != folder
         folder = state.folder
-        if state.items != items || state.cutURLs != cutURLs || state.isLocalVolume != isLocalVolume {
+        if state.items != items || state.cutURLs != cutURLs || state.isLocalVolume != isLocalVolume
+            || state.gitStates != gitStates {
             items = state.items
             cutURLs = state.cutURLs
+            gitStates = state.gitStates
             isLocalVolume = state.isLocalVolume
             table.reloadData()
         }
@@ -160,7 +163,12 @@ final class FileTableCoordinator: NSObject, NSTableViewDataSource, NSTableViewDe
         let cell = tableView.makeView(withIdentifier: tableColumn.identifier, owner: nil) as? FileCellView
             ?? FileCellView(column: column)
         let item = items[row]
-        cell.configure(with: item, isLocalVolume: isLocalVolume, isCut: cutURLs.contains(item.url))
+        cell.configure(
+            with: item,
+            isLocalVolume: isLocalVolume,
+            isCut: cutURLs.contains(item.url),
+            gitState: gitStates[item.url.path]
+        )
         return cell
     }
 

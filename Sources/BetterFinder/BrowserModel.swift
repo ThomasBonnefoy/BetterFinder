@@ -28,6 +28,9 @@ final class BrowserModel {
     /// the drive's page is shown instead of a list that would never load.
     private(set) var blockedDrive: UUID?
     var selection: Set<URL> = []
+    /// What Git says about the folder shown, when it is in a working tree
+    /// on a local disk.
+    private(set) var gitInfo: GitInfo?
     /// What the search field holds. A search looks for names in the current
     /// folder and all its sub-folders; it ends when the text is emptied or
     /// when the window goes elsewhere.
@@ -85,6 +88,13 @@ final class BrowserModel {
     @ObservationIgnored private var hasStarted = false
     @ObservationIgnored private let watcher = DirectoryWatcher()
     @ObservationIgnored private let executor = FileOperationExecutor()
+    /// Watches the `.git` folder: a commit, a checkout or a `git add` made
+    /// elsewhere changes it without touching the folder shown.
+    @ObservationIgnored private let gitWatcher = DirectoryWatcher()
+    @ObservationIgnored private var gitWatchedRoot: URL?
+    @ObservationIgnored private var gitGeneration = 0
+    /// Git reads still running, for the tests.
+    @ObservationIgnored private(set) var pendingGitReads = 0
     /// Undo entries of this window. The undo manager does not retain its
     /// targets, so they are kept alive here.
     @ObservationIgnored private var undoRecords: [UndoRecord] = []
@@ -746,6 +756,11 @@ final class BrowserModel {
             items = []
             selection = []
             state = .loading
+            // Inside the same working tree the branch stays on screen while
+            // the new folder loads; elsewhere it no longer applies.
+            if let root = gitInfo?.root, !Self.isInside(url, root) {
+                gitInfo = nil
+            }
             watcher.watch(url) { [weak self] in
                 Task { @MainActor in self?.contentChanged() }
             }
@@ -762,6 +777,7 @@ final class BrowserModel {
                 state = .loaded
                 sidebarTree.folderLoaded(url, items: allItems)
                 applyFilterAndSort()
+                refreshGit()
                 // The folder changed (files were moved, deleted…): the
                 // results may be out of date.
                 if isSearching { startSearch() }
@@ -785,6 +801,7 @@ final class BrowserModel {
                 items = []
                 selection = []
                 state = .failed(error.localizedDescription)
+                refreshGit()
             }
         }
     }
@@ -798,6 +815,53 @@ final class BrowserModel {
         items = []
         selection = []
         state = .loaded
+        refreshGit()
+    }
+
+    // MARK: - Git
+
+    /// Asks Git again about the folder shown. Called after each listing of
+    /// the folder, when `.git` changes and when the app comes to the front.
+    ///
+    /// Git is never run on a network drive: it would read the whole working
+    /// tree over the network, or wait on a server that is gone.
+    func refreshGit() {
+        gitGeneration += 1
+        let generation = gitGeneration
+        guard AppSettings.showsGitInfo,
+              state == .loaded,
+              isLocalVolume,
+              let folder = operationFolder,
+              driveMonitor?.drive(containing: folder) == nil
+        else {
+            if gitInfo != nil { gitInfo = nil }
+            watchGit(nil)
+            return
+        }
+        pendingGitReads += 1
+        Task {
+            defer { pendingGitReads -= 1 }
+            let info = await GitReader.read(folder)
+            guard generation == gitGeneration else { return }
+            if info != gitInfo { gitInfo = info }
+            watchGit(info?.root)
+        }
+    }
+
+    private func watchGit(_ root: URL?) {
+        guard root != gitWatchedRoot else { return }
+        gitWatchedRoot = root
+        guard let root else {
+            gitWatcher.stop()
+            return
+        }
+        gitWatcher.watch(root.appending(path: ".git")) { [weak self] in
+            Task { @MainActor in self?.refreshGit() }
+        }
+    }
+
+    private static func isInside(_ url: URL, _ root: URL) -> Bool {
+        url.path == root.path || url.path.hasPrefix(root.path == "/" ? "/" : root.path + "/")
     }
 
     private func applyFilterAndSort() {

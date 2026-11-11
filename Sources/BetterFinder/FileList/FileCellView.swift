@@ -6,6 +6,8 @@ import UniformTypeIdentifiers
 /// plain text.
 final class FileCellView: NSTableCellView {
     private let column: FileColumn
+    /// Git state of the item, at the end of the name column.
+    private var badge: GitBadgeView?
 
     init(column: FileColumn) {
         self.column = column
@@ -26,10 +28,18 @@ final class FileCellView: NSTableCellView {
 
         var constraints = [
             label.centerYAnchor.constraint(equalTo: centerYAnchor),
-            label.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -2),
         ]
 
         if column == .name {
+            let badge = GitBadgeView()
+            addSubview(badge)
+            self.badge = badge
+            constraints += [
+                badge.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -4),
+                badge.centerYAnchor.constraint(equalTo: centerYAnchor),
+                label.trailingAnchor.constraint(equalTo: badge.leadingAnchor, constant: -4),
+            ]
+
             let icon = NSImageView()
             icon.translatesAutoresizingMaskIntoConstraints = false
             icon.imageScaling = .scaleProportionallyUpOrDown
@@ -43,7 +53,10 @@ final class FileCellView: NSTableCellView {
                 label.leadingAnchor.constraint(equalTo: icon.trailingAnchor, constant: 6),
             ]
         } else {
-            constraints.append(label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 2))
+            constraints += [
+                label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 2),
+                label.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -2),
+            ]
         }
         NSLayoutConstraint.activate(constraints)
     }
@@ -53,7 +66,8 @@ final class FileCellView: NSTableCellView {
         fatalError("init(coder:) is not supported")
     }
 
-    func configure(with item: FileItem, isLocalVolume: Bool, isCut: Bool) {
+    func configure(with item: FileItem, isLocalVolume: Bool, isCut: Bool, gitState: GitFileState? = nil) {
+        badge?.show(gitState, isFolder: item.isBrowsable)
         // Cut items are shown faded until they are pasted, as in Explorer.
         let alpha: CGFloat = isCut ? 0.45 : 1
         textField?.alphaValue = alpha

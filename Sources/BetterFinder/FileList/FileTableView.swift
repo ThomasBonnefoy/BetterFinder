@@ -17,6 +17,8 @@ struct FileTableView: NSViewRepresentable {
         var focusRequests: Int
         var cutURLs: Set<URL>
         var renameRequest: RenameRequest?
+        /// Git state of the changed files and folders, by path.
+        var gitStates: [String: GitFileState] = [:]
     }
 
     let model: BrowserModel
