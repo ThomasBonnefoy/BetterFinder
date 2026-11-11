@@ -4,6 +4,17 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et les n
 
 ## [Non publié]
 
+## [0.16.0] - 2026-11-11
+
+La barre d'outils personnalisable.
+
+### Ajouté
+- La barre d'outils se personnalise : clic droit dessus, ou menu Présentation > « Personnaliser la barre d'outils… ». On y glisse les boutons voulus, on en retire, on les remet dans l'ordre, on ajoute des espaces, et on choisit entre icônes seules ou icônes et texte. macOS retient le résultat.
+- Nouveaux boutons proposés : Fichiers masqués, Ce Mac, Dossier personnel, Ajouter aux favoris, Afficher dans le Finder, Nouveau dossier, Couper, Copier, Coller, Renommer, Mettre à la corbeille, Copier le chemin.
+
+### Modifié
+- Le champ de recherche est dessiné par BetterFinder : celui de macOS faisait quitter l'app à l'ouverture du panneau de personnalisation. `Cmd+F` et `Échap` marchent comme avant.
+
 ## [0.15.1] - 2026-11-11
 
 ### Modifié
