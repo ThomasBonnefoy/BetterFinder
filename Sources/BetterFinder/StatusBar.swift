@@ -23,7 +23,9 @@ struct StatusBar: View {
             }
             Spacer()
             if let info = model.gitInfo {
-                GitStatusLabel(info: info)
+                GitStatusLabel(info: info) { branch, remote in
+                    model.switchBranch(to: branch, remoteBranch: remote)
+                }
             }
             if model.isSearchRunning {
                 ProgressView().controlSize(.mini)

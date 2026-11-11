@@ -113,6 +113,42 @@ import BetterFinderCore
         #expect(model.gitInfo?.status.branch == "feature")
     }
 
+    @Test func switchingBranchUpdatesTheFolder() async throws {
+        let root = try makeTree()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let repo = root.appending(path: "repo")
+        // "feature" has one more folder, with a file in it.
+        try git(["checkout", "-q", "-b", "feature"], in: repo)
+        try FileManager.default.createDirectory(at: repo.appending(path: "Extra"), withIntermediateDirectories: true)
+        try Data("x".utf8).write(to: repo.appending(path: "Extra/file.txt"))
+        try git(["add", "."], in: repo)
+        try git([
+            "-c", "user.name=Test", "-c", "user.email=test@example.com",
+            "-c", "commit.gpgsign=false", "commit", "-q", "-m", "second",
+        ], in: repo)
+
+        let model = BrowserModel(start: repo.appending(path: "Extra"))
+        model.start()
+        try await settled(model)
+        #expect(model.gitInfo?.status.branch == "feature")
+        #expect(model.gitInfo?.lastCommit?.subject == "second")
+        #expect(model.gitInfo?.branches.local == ["feature", "main"])
+
+        // "Extra" does not exist on main: the window goes up to the repository.
+        model.switchBranch(to: "main")
+        try await waitFor { model.gitInfo?.status.branch == "main" && model.currentURL?.path == repo.path }
+        try await settled(model)
+        #expect(model.currentURL?.path == repo.path)
+        #expect(model.gitInfo?.lastCommit?.subject == "first")
+        #expect(model.alert == nil)
+        #expect(model.activity == nil)
+
+        model.switchBranch(to: "missing")
+        try await waitFor { model.alert != nil }
+        #expect(model.alert?.title == "Impossible de changer de branche")
+        #expect(model.gitInfo?.status.branch == "main")
+    }
+
     @Test func canBeTurnedOffInTheSettings() async throws {
         let root = try makeTree()
         defer { try? FileManager.default.removeItem(at: root) }

@@ -78,6 +78,14 @@ enum GitText {
         return parts.isEmpty ? "aucune modification" : parts.joined(separator: " · ")
     }
 
+    /// The tooltip of the last commit: its message, who made it and when.
+    static func details(_ commit: GitCommit) -> String {
+        var style = Date.RelativeFormatStyle(presentation: .numeric, unitsStyle: .wide)
+        style.locale = Locale(identifier: "fr_FR")
+        let when = commit.date.formatted(style)
+        return "Dernier commit : \(commit.subject)\n\(commit.id) · \(commit.author) · \(when)"
+    }
+
     /// The tooltip of the status bar: the repository and its upstream.
     static func details(_ info: GitInfo) -> String {
         var lines = ["Dépôt Git : \(info.root.lastPathComponent)"]
@@ -99,24 +107,63 @@ enum GitText {
     }
 }
 
-/// The Git part of the status bar: branch, commits to push or pull, changes.
+/// The Git part of the status bar: branch (a menu to switch to another
+/// one), commits to push or pull, changes, last commit.
 struct GitStatusLabel: View {
     let info: GitInfo
+    /// Asked to switch to a branch; the flag tells a remote one.
+    var onSwitch: (String, Bool) -> Void = { _, _ in }
 
     var body: some View {
         HStack(spacing: 6) {
-            Image(systemName: "arrow.triangle.branch")
-            Text(GitText.head(info.status))
-                .foregroundStyle(.primary)
+            branchMenu
             if let sync = GitText.sync(info.status) {
                 Text(sync).monospacedDigit()
             }
             Text("·")
             Text(GitText.changes(info.status))
                 .foregroundStyle(info.status.conflicted > 0 ? AnyShapeStyle(.red) : AnyShapeStyle(.secondary))
+                .help(GitText.details(info))
+            if let commit = info.lastCommit {
+                Text("·")
+                HStack(spacing: 4) {
+                    Text(commit.id).monospaced()
+                    Text(commit.subject)
+                        .foregroundStyle(.primary)
+                        .truncationMode(.tail)
+                }
+                .frame(maxWidth: 520, alignment: .trailing)
+                .help(GitText.details(commit))
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Dernier commit : \(commit.subject)")
+            }
         }
-        .help(GitText.details(info))
-        .accessibilityElement(children: .combine)
+    }
+
+    private var branchMenu: some View {
+        Menu {
+            Section("Branches") {
+                ForEach(info.branches.local, id: \.self) { branch in
+                    Toggle(branch, isOn: Binding(
+                        get: { branch == info.status.branch },
+                        set: { if $0 { onSwitch(branch, false) } }
+                    ))
+                }
+            }
+            if !info.branches.remoteOnly.isEmpty {
+                Menu("Branches distantes") {
+                    ForEach(info.branches.remoteOnly, id: \.self) { branch in
+                        Button(branch) { onSwitch(branch, true) }
+                    }
+                }
+            }
+        } label: {
+            Label(GitText.head(info.status), systemImage: "arrow.triangle.branch")
+                .foregroundStyle(.primary)
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+        .help("Changer de branche")
     }
 }
 

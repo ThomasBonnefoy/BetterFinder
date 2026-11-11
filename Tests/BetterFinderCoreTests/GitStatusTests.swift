@@ -147,6 +147,50 @@ import Testing
         #expect(await GitReader.read(folder) == nil)
     }
 
+    @Test func readsTheLastCommit() {
+        let commit = GitCommit(log: Data("0123456\0fix: a thing\0Ada Lovelace\01700000000\n".utf8))
+        #expect(commit == GitCommit(
+            id: "0123456", subject: "fix: a thing", author: "Ada Lovelace",
+            date: Date(timeIntervalSince1970: 1_700_000_000)
+        ))
+        #expect(GitCommit(log: Data()) == nil)
+    }
+
+    @Test func sortsTheBranchesAndKeepsRemoteOnlyOnes() {
+        let branches = GitBranches(refs: Data("""
+        refs/heads/main
+        refs/heads/dev
+        refs/heads/feat/git
+        refs/remotes/origin/HEAD
+        refs/remotes/origin/main
+        refs/remotes/origin/feat/other
+        refs/remotes/origin/dev
+
+        """.utf8))
+        #expect(branches.local == ["dev", "feat/git", "main"])
+        #expect(branches.remoteOnly == ["origin/feat/other"])
+        #expect(GitBranches.localName(of: "origin/feat/other") == "feat/other")
+    }
+
+    @Test func switchesToAnotherBranch() async throws {
+        let root = try makeRepository()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try git(["branch", "other"], in: root)
+
+        let before = try #require(await GitReader.read(root))
+        #expect(before.branches.local == ["main", "other"])
+        #expect(before.lastCommit?.subject == "first")
+        #expect(before.lastCommit?.author == "Test")
+
+        #expect(await GitReader.switchBranch(in: root, to: "other") == nil)
+        #expect(await GitReader.read(root)?.status.branch == "other")
+
+        // Git says why when it refuses.
+        let failure = await GitReader.switchBranch(in: root, to: "missing")
+        #expect(failure?.isEmpty == false)
+        #expect(await GitReader.read(root)?.status.branch == "other")
+    }
+
     @Test func readsARealRepository() async throws {
         let root = try makeRepository()
         defer { try? FileManager.default.removeItem(at: root) }

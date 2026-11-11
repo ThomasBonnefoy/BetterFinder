@@ -848,6 +848,38 @@ final class BrowserModel {
         }
     }
 
+    /// Switches the repository of the folder shown to another branch.
+    /// `remoteBranch` ("origin/name") creates the local branch following it.
+    func switchBranch(to branch: String, remoteBranch: Bool = false) {
+        guard let root = gitInfo?.root, branch != gitInfo?.status.branch else { return }
+        runningOperations += 1
+        activity = "Changement de branche…"
+        Task {
+            let failure = await GitReader.switchBranch(in: root, to: branch, remoteBranch: remoteBranch)
+            runningOperations -= 1
+            if runningOperations == 0 { activity = nil }
+            if let failure {
+                alert = OperationAlert(title: "Impossible de changer de branche", message: failure)
+            }
+            // The folder shown may not exist on the new branch: fall back
+            // on the closest one that does.
+            if var folder = operationFolder {
+                var isDirectory: ObjCBool = false
+                while folder.path != root.path, folder.path != "/",
+                      !(FileManager.default.fileExists(atPath: folder.path, isDirectory: &isDirectory)
+                          && isDirectory.boolValue) {
+                    folder = folder.deletingLastPathComponent()
+                }
+                if folder.path != operationFolder?.path {
+                    navigate(to: folder)
+                    return
+                }
+            }
+            sidebarTree.reload()
+            load(resetContent: false)
+        }
+    }
+
     private func watchGit(_ root: URL?) {
         guard root != gitWatchedRoot else { return }
         gitWatchedRoot = root
