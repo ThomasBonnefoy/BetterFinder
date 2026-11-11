@@ -4,6 +4,17 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et les n
 
 ## [Non publié]
 
+## [0.13.0] - 2026-11-11
+
+Les infos Git.
+
+### Ajouté
+- Dans un dossier qui fait partie d'un dépôt Git, la barre d'état affiche la branche, les commits à envoyer (↑) et à recevoir (↓), et le nombre de fichiers indexés, modifiés, non suivis ou en conflit. L'infobulle donne le dépôt et la branche suivie.
+- Une lettre de couleur marque les fichiers changés, en liste comme en icônes : `M` modifié, `A` ajouté, `R` renommé, `?` non suivi, `!` en conflit. Un dossier prend la marque de ce qu'il contient.
+- L'affichage se met à jour quand un fichier change, après un commit ou un changement de branche fait ailleurs, et au retour dans BetterFinder.
+- Git n'est jamais lancé sur un lecteur réseau, et ne modifie rien dans le dépôt.
+- Réglage « Afficher la branche et l'état des fichiers dans les dépôts Git » (`Cmd+,`), coché par défaut.
+
 ## [0.12.1] - 2026-11-11
 
 ### Corrigé
