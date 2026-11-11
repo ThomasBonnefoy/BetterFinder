@@ -4,6 +4,15 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et les n
 
 ## [Non publié]
 
+## [0.10.0] - 2026-11-11
+
+La vue icônes.
+
+### Ajouté
+- Deuxième présentation des dossiers : une grille de grandes icônes avec leur nom. Le sélecteur de la barre d'outils, le menu Présentation (`Cmd+1` Détails, `Cmd+2` Icônes) ou la barre d'outils la choisissent ; le choix est retenu d'un lancement à l'autre.
+- La grille fait tout ce que fait la liste : sélection à la souris et au clavier, double-clic, couper/copier/coller, renommer sur place (`F2`), corbeille, Coup d'œil, glisser-déposer, menu contextuel, recherche.
+- Menu Présentation > « Trier par » : nom, date de modification, type ou taille, croissant ou décroissant. Utile surtout dans la grille, qui n'a pas d'en-têtes de colonnes.
+
 ## [0.9.0] - 2026-11-11
 
 Le Coup d'œil.

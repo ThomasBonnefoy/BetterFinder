@@ -10,7 +10,7 @@ L'idée de départ : garder les **lecteurs réseau toujours visibles dans la bar
 - **Arborescence dans la barre latérale** : chaque favori, lecteur ou volume se déplie pour montrer ses sous-dossiers ; l'option « Développer jusqu'au dossier ouvert » (menu Présentation) la fait suivre le dossier affiché
 - **Vue « Ce Mac »** (l'équivalent de « Ce PC ») : dossiers principaux, disques avec leur espace libre, lecteurs réseau avec leur état
 - **Onglets**, avec la barre d'onglets de macOS : `Cmd+T`, « Ouvrir dans un nouvel onglet » au clic droit
-- Liste détaillée triable (nom, date de modification, type, taille), dossiers en premier
+- Liste détaillée triable (nom, date de modification, type, taille), dossiers en premier, ou grille d'icônes (`Cmd+1`, `Cmd+2`)
 - Couper, copier, coller, renommer, corbeille, nouveau dossier et nouveau document, avec annulation ; rien n'est jamais écrasé
 - Glisser-déposer entre dossiers, fenêtres, onglets, barre latérale et Finder : déplacement dans le même disque, copie vers un autre (`Option` force la copie, `Cmd` le déplacement)
 - Recherche par nom dans le dossier et ses sous-dossiers (`Cmd+F`), sans tenir compte des accents ni des majuscules
@@ -56,6 +56,7 @@ Le mot de passe est demandé par macOS à la première connexion et rangé dans 
 | Copier le chemin d'accès | `Cmd+Maj+C` |
 | Modifier l'adresse | `Cmd+L` |
 | Rechercher | `Cmd+F` |
+| Présentation détails, icônes | `Cmd+1`, `Cmd+2` |
 | Coup d'œil | `Espace` ou `Cmd+Y` |
 | Ajouter un lecteur réseau | `Cmd+K` |
 | Actualiser | `Cmd+R` ou `F5` |
