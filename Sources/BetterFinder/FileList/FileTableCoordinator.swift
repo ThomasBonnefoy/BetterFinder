@@ -145,6 +145,7 @@ final class FileTableCoordinator: NSObject, NSTableViewDataSource, NSTableViewDe
     func tableViewSelectionDidChange(_ notification: Notification) {
         guard !isSyncing, let table else { return }
         model.selection = Set(selectedItems(in: table).map(\.url))
+        table.refreshQuickLook()
     }
 
     func tableView(_ tableView: NSTableView, sortDescriptorsDidChange oldDescriptors: [NSSortDescriptor]) {
@@ -255,6 +256,10 @@ final class FileTableCoordinator: NSObject, NSTableViewDataSource, NSTableViewDe
                 guard hasSelection else { return false }
                 model.trashSelection()
                 return true
+            case KeyCode.space:
+                guard hasSelection else { return false }
+                table.toggleQuickLook()
+                return true
             case KeyCode.f2:
                 guard table.selectedRowIndexes.count == 1 else { return false }
                 beginRename(row: table.selectedRow)
@@ -291,6 +296,10 @@ final class FileTableCoordinator: NSObject, NSTableViewDataSource, NSTableViewDe
 
         if modifiers == .command {
             switch key {
+            case KeyCode.y:
+                guard hasSelection else { return false }
+                table.toggleQuickLook()
+                return true
             case KeyCode.return, KeyCode.keypadEnter:
                 guard model.canOpenSelectionInNewTabs else { return false }
                 model.openSelectionInNewTabs()
@@ -414,6 +423,7 @@ final class FileTableCoordinator: NSObject, NSTableViewDataSource, NSTableViewDe
 
     private func buildItemMenu(_ menu: NSMenu, selectionCount: Int) {
         menu.addItem(item("Ouvrir", #selector(menuOpen)))
+        menu.addItem(item("Coup d'œil", #selector(menuQuickLook)))
         if model.canOpenSelectionInNewTabs {
             menu.addItem(item("Ouvrir dans un nouvel onglet", #selector(menuOpenInNewTab)))
         }
@@ -454,6 +464,7 @@ final class FileTableCoordinator: NSObject, NSTableViewDataSource, NSTableViewDe
     }
 
     @objc private func menuOpen() { model.openSelection() }
+    @objc private func menuQuickLook() { table?.toggleQuickLook() }
     @objc private func menuOpenInNewTab() { model.openSelectionInNewTabs() }
     @objc private func menuCut() { model.cutSelection() }
     @objc private func menuCopy() { model.copySelection() }
@@ -477,6 +488,8 @@ private enum KeyCode {
     static let keypadEnter: UInt16 = 76
     static let backspace: UInt16 = 51
     static let forwardDelete: UInt16 = 117
+    static let space: UInt16 = 49
+    static let y: UInt16 = 16
     static let f2: UInt16 = 120
     static let f5: UInt16 = 96
     static let leftArrow: UInt16 = 123
