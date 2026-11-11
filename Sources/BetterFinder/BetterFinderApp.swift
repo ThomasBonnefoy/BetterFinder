@@ -16,6 +16,8 @@ struct BetterFinderApp: App {
         .defaultSize(width: 1040, height: 640)
         .commands {
             SidebarCommands()
+            // "Personnaliser la barre d'outils…" in the Présentation menu.
+            ToolbarCommands()
             BrowserCommands()
         }
 

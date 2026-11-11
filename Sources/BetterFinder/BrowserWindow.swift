@@ -10,7 +10,6 @@ struct BrowserWindow: View {
     @Environment(VolumeStore.self) private var volumeStore
     @Environment(DriveMonitor.self) private var driveMonitor
     @Environment(\.undoManager) private var undoManager
-    @FocusState private var searchFocused: Bool
     @AppStorage(AppSettings.showsGitInfoKey) private var showsGitInfo = true
 
     var body: some View {
@@ -24,40 +23,9 @@ struct BrowserWindow: View {
                 StatusBar(model: model)
             }
             .navigationTitle(model.title)
-            .searchable(text: $model.searchText, placement: .toolbar, prompt: "Rechercher")
-            .searchFocused($searchFocused)
-            .onChange(of: model.searchFocusRequests) { searchFocused = true }
             .toolbar(removing: .title)
-            .toolbar {
-                ToolbarItemGroup(placement: .navigation) {
-                    Button("Précédent", systemImage: "chevron.left") { model.goBack() }
-                        .disabled(!model.canGoBack)
-                        .help("Dossier précédent")
-                    Button("Suivant", systemImage: "chevron.right") { model.goForward() }
-                        .disabled(!model.canGoForward)
-                        .help("Dossier suivant")
-                    Button("Dossier parent", systemImage: "arrow.up") { model.goUp() }
-                        .disabled(!model.canGoUp)
-                        .help("Dossier parent")
-                }
-                ToolbarItem(placement: .principal) {
-                    AddressBar(model: model)
-                }
-                ToolbarItemGroup(placement: .primaryAction) {
-                    Picker("Présentation", selection: $model.viewMode) {
-                        ForEach(ViewMode.allCases, id: \.self) { mode in
-                            Label(mode.title, systemImage: mode.symbol).tag(mode)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .help("Mode d'affichage (Cmd+1, Cmd+2)")
-                    Button("Actualiser", systemImage: "arrow.clockwise") { model.reload() }
-                        .help("Actualiser")
-                    // Always there, unlike the tab bar, which macOS hides
-                    // while the window has a single tab.
-                    Button("Nouvel onglet", systemImage: "plus") { model.newTab() }
-                        .help("Nouvel onglet")
-                }
+            .toolbar(id: BrowserToolbar.id) {
+                BrowserToolbar(model: model)
             }
         }
         .focusedSceneValue(\.browserModel, model)

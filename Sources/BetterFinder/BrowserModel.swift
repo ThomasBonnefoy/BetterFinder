@@ -307,6 +307,11 @@ final class BrowserModel {
         searchFocusRequests += 1
     }
 
+    /// The search field is done with: the keyboard goes back to the list.
+    func endSearchEditing() {
+        listFocusRequests += 1
+    }
+
     /// (Re)starts the search for the current text, or ends it if the text is
     /// empty. The previous results stay on screen until the new ones come, so
     /// that the list does not flicker while typing.
