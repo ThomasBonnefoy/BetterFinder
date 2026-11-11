@@ -4,6 +4,17 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et les n
 
 ## [Non publié]
 
+## [0.11.0] - 2026-11-11
+
+Les réglages.
+
+### Ajouté
+- Fenêtre de réglages (`Cmd+,`) :
+  - les nouvelles fenêtres et les nouveaux onglets s'ouvrent sur « Ce Mac » ou sur le dossier personnel ;
+  - présentation des dossiers (détails ou icônes) ;
+  - fichiers masqués affichés ou non dans les nouvelles fenêtres ;
+  - option « Développer jusqu'au dossier ouvert » de la barre latérale, déjà présente dans le menu Présentation.
+
 ## [0.10.0] - 2026-11-11
 
 La vue icônes.

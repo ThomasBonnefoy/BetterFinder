@@ -19,6 +19,7 @@ L'idée de départ : garder les **lecteurs réseau toujours visibles dans la bar
 - Barre d'adresse : fil d'Ariane cliquable, ou chemin à saisir (`Cmd+L`)
 - Précédent, suivant, dossier parent
 - Raccourcis de l'Explorateur Windows adaptés au Mac
+- Réglages (`Cmd+,`) : page d'ouverture, présentation, fichiers masqués
 
 La suite est décrite dans le [journal des modifications](CHANGELOG.md).
 
