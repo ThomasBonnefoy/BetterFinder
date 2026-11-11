@@ -9,7 +9,7 @@ struct StatusBar: View {
         HStack(spacing: 16) {
             // A drive's page and the computer's overview list no file:
             // counting items would be noise.
-            if model.displayedDriveID == nil, !model.isOnComputer {
+            if model.displayedDriveID == nil, !model.isOnComputer, !model.accessDenied {
                 Text(model.isSearching
                     ? Self.resultsText(model.items.count)
                     : Self.countText(model.items.count))

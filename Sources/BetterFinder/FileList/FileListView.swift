@@ -45,6 +45,8 @@ struct FileListView: View {
             ProgressView()
                 .controlSize(.small)
                 .allowsHitTesting(false)
+        case .failed where model.accessDenied:
+            AccessDeniedView(isTrash: model.isInTrash)
         case .failed(let message):
             ContentUnavailableView {
                 Label("Impossible d'ouvrir ce dossier", systemImage: "exclamationmark.triangle")
@@ -66,8 +68,13 @@ struct FileListView: View {
                     }
                 }
             } else if model.items.isEmpty {
-                ContentUnavailableView("Ce dossier est vide", systemImage: "folder")
-                    .allowsHitTesting(false)
+                if model.isOnTrash {
+                    ContentUnavailableView("La corbeille est vide", systemImage: "trash")
+                        .allowsHitTesting(false)
+                } else {
+                    ContentUnavailableView("Ce dossier est vide", systemImage: "folder")
+                        .allowsHitTesting(false)
+                }
             }
         }
     }

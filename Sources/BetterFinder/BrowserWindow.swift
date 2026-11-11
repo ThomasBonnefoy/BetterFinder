@@ -119,10 +119,14 @@ struct BrowserWindow: View {
             ),
             presenting: model.deleteConfirmation
         ) { confirmation in
-            Button("Supprimer", role: .destructive) { model.deletePermanently(confirmation.urls) }
+            Button(confirmation.emptiesTrash ? "Vider la corbeille" : "Supprimer", role: .destructive) {
+                model.deletePermanently(confirmation.urls)
+            }
             Button("Annuler", role: .cancel) {}
         } message: { confirmation in
-            Text(confirmation.becauseNoTrash
+            Text(confirmation.emptiesTrash
+                ? "Les éléments de la corbeille seront supprimés définitivement. Cette action ne peut pas être annulée."
+                : confirmation.becauseNoTrash
                 ? "Ce lecteur n'a pas de corbeille. La suppression est immédiate et ne peut pas être annulée."
                 : "Cette action ne peut pas être annulée.")
         }
@@ -145,6 +149,11 @@ extension BrowserWindow {
     /// "Supprimer définitivement « a.txt » ?" or "… ces 3 éléments ?"
     fileprivate var deleteTitle: String {
         guard let urls = model.deleteConfirmation?.urls else { return "" }
+        if model.deleteConfirmation?.emptiesTrash == true {
+            return urls.count == 1
+                ? "Vider la corbeille et supprimer définitivement 1 élément ?"
+                : "Vider la corbeille et supprimer définitivement ces \(urls.count) éléments ?"
+        }
         if urls.count == 1, let url = urls.first {
             return "Supprimer définitivement « \(url.lastPathComponent) » ?"
         }

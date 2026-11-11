@@ -33,6 +33,15 @@ struct ComputerView: View {
                             placeMenu(for: favorite.url)
                         }
                     }
+                    tile(.place(model.trashURL), open: { model.showTrash() }) {
+                        symbolIcon("trash")
+                    } text: {
+                        Text(DisplayName.trash)
+                    } menu: {
+                        Button("Vider la corbeille…") { model.askToEmptyTrash() }
+                        Divider()
+                        placeMenu(for: model.trashURL)
+                    }
                 }
 
                 section("Appareils et lecteurs") {

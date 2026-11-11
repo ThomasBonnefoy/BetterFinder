@@ -100,6 +100,12 @@ struct SidebarView: View {
                             .folderDrop(on: url, model: model)
                     }
                 }
+                // Files dropped on the Trash are put in it.
+                Label(DisplayName.trash, systemImage: "trash")
+                    .sidebarRow { model.showTrash() }
+                    .tag(SidebarItem.place(model.trashURL))
+                    .contextMenu { trashMenu }
+                    .folderDrop(on: model.trashURL, model: model)
             }
         }
         .listStyle(.sidebar)
@@ -172,6 +178,14 @@ struct SidebarView: View {
 
     private var localVolumes: [VolumeInfo] {
         volumeStore.volumes(besides: driveMonitor)
+    }
+
+    @ViewBuilder
+    private var trashMenu: some View {
+        Button("Ouvrir") { model.showTrash() }
+        Button("Ouvrir dans un nouvel onglet") { model.openInNewTab(model.trashURL) }
+        Divider()
+        Button("Vider la corbeille…") { model.askToEmptyTrash() }
     }
 
     @ViewBuilder
@@ -270,7 +284,7 @@ struct SidebarView: View {
         if let drive = driveMonitor.drives.first(where: { mountedRoot(of: $0) == current }) {
             return .drive(drive.id)
         }
-        let places = favorites.map(\.url) + localVolumes.map { BrowserModel.normalized($0.url) }
+        let places = favorites.map(\.url) + localVolumes.map { BrowserModel.normalized($0.url) } + [model.trashURL]
         if let place = places.first(where: { $0 == current }) {
             return .place(place)
         }

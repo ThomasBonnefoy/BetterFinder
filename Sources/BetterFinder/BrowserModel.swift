@@ -27,6 +27,9 @@ final class BrowserModel {
     /// Set when the current folder is on a network drive that went offline:
     /// the drive's page is shown instead of a list that would never load.
     private(set) var blockedDrive: UUID?
+    /// True when the current folder could not be read because macOS does not
+    /// allow the app to (the Trash, for instance, before "Full Disk Access").
+    private(set) var accessDenied = false
     var selection: Set<URL> = []
     /// What Git says about the folder shown, when it is in a working tree
     /// on a local disk.
@@ -68,6 +71,9 @@ final class BrowserModel {
     @ObservationIgnored var undoManager: UndoManager?
 
     let clipboard: FileClipboard
+    /// The user's Trash. A parameter of the model so that tests can use
+    /// another folder.
+    let trashURL: URL
     /// Folder tree of the sidebar. The tabs of the app share one.
     let sidebarTree: SidebarTreeModel
     /// Opens a folder, or the computer's overview, in a new tab. Set by the
@@ -102,9 +108,11 @@ final class BrowserModel {
     init(
         start: URL = FileManager.default.homeDirectoryForCurrentUser,
         clipboard: FileClipboard = .shared,
-        sidebarTree: SidebarTreeModel = SidebarTreeModel()
+        sidebarTree: SidebarTreeModel = SidebarTreeModel(),
+        trash: URL = TrashFolder.url
     ) {
         history = NavigationHistory(start: .folder(Self.normalized(start)))
+        trashURL = Self.normalized(trash)
         self.clipboard = clipboard
         self.sidebarTree = sidebarTree
     }
@@ -125,6 +133,16 @@ final class BrowserModel {
         return blockedDrive
     }
 
+    /// True on the Trash itself.
+    var isOnTrash: Bool {
+        currentURL.map { TrashFolder.isTrash($0, trash: trashURL) } ?? false
+    }
+
+    /// True in the Trash or in a folder that lies in it.
+    var isInTrash: Bool {
+        currentURL.map { TrashFolder.contains($0, trash: trashURL) } ?? false
+    }
+
     /// Name of the computer's overview ("Ce PC" in Explorer).
     nonisolated static let computerName = "Ce Mac"
 
@@ -136,6 +154,7 @@ final class BrowserModel {
         case .computer:
             return Self.computerName
         case .folder(let url):
+            if TrashFolder.isTrash(url, trash: trashURL) { return DisplayName.trash }
             return driveMonitor?.driveMounted(at: url)?.name ?? DisplayName.of(url)
         case .drive(let id):
             return driveMonitor?.drive(id)?.name ?? "Lecteur réseau"
@@ -248,6 +267,10 @@ final class BrowserModel {
         guard location != .computer else { return }
         history.go(to: .computer)
         load(resetContent: true)
+    }
+
+    func showTrash() {
+        navigate(to: trashURL)
     }
 
     func goHome() {
@@ -431,7 +454,7 @@ final class BrowserModel {
     }
 
     var canPaste: Bool {
-        operationFolder != nil && clipboard.hasFiles
+        operationFolder != nil && !isInTrash && clipboard.hasFiles
     }
 
     func copySelection() {
@@ -448,7 +471,7 @@ final class BrowserModel {
 
     /// Pastes into the current folder: a move after a cut, a copy otherwise.
     func paste() {
-        guard let folder = operationFolder else { return }
+        guard let folder = operationFolder, !isInTrash else { return }
         let content = clipboard.contents()
         guard !content.urls.isEmpty else { return }
         if content.isCut {
@@ -476,6 +499,14 @@ final class BrowserModel {
     @discardableResult
     func drop(_ urls: [URL], into folder: URL, mode: TransferMode) -> Bool {
         guard !urls.isEmpty else { return false }
+        if TrashFolder.isTrash(folder, trash: trashURL) {
+            // Dropped on the Trash: what is not there yet goes to it, and
+            // can be put back with Undo.
+            let outside = urls.filter { !TrashFolder.contains($0, trash: trashURL) }
+            guard !outside.isEmpty else { return false }
+            trash(outside)
+            return true
+        }
         switch mode {
         case .copy:
             perform(.copy(sources: urls, to: folder), actionName: "la copie", activity: "Copie…")
@@ -495,7 +526,43 @@ final class BrowserModel {
     func trashSelection() {
         let urls = selectedItems.map(\.url)
         guard !urls.isEmpty else { return }
+        if isInTrash {
+            // Already in the Trash: the only way out is to delete for good.
+            askToDeleteSelection()
+            return
+        }
+        trash(urls)
+    }
+
+    private func trash(_ urls: [URL]) {
         perform(.trash(urls), actionName: "la mise à la corbeille", activity: "Mise à la corbeille…")
+    }
+
+    /// Asks before emptying the Trash. Works from any page.
+    func askToEmptyTrash() {
+        let trash = trashURL
+        Task {
+            do {
+                let urls = try await TrashFolder.contents(of: trash)
+                if urls.isEmpty {
+                    alert = OperationAlert(title: "La corbeille est vide", message: "Il n'y a rien à supprimer.")
+                } else {
+                    deleteConfirmation = DeleteConfirmation(urls: urls, becauseNoTrash: false, emptiesTrash: true)
+                }
+            } catch {
+                alert = Self.trashAlert(for: error)
+            }
+        }
+    }
+
+    private static func trashAlert(for error: Error) -> OperationAlert {
+        if TrashFolder.isPermissionDenied(error) {
+            return OperationAlert(
+                title: "BetterFinder ne peut pas lire la corbeille",
+                message: "macOS protège la corbeille. Autorisez BetterFinder dans Réglages Système > Confidentialité et sécurité > Accès complet au disque, puis relancez l'app."
+            )
+        }
+        return OperationAlert(title: "La corbeille est illisible", message: error.localizedDescription)
     }
 
     /// Asks before deleting the selection for good (Shift+Delete in Explorer).
@@ -522,7 +589,7 @@ final class BrowserModel {
     }
 
     func newFolder() {
-        guard let folder = operationFolder else { return }
+        guard let folder = operationFolder, !isInTrash else { return }
         perform(
             .createFolder(in: folder, name: "Nouveau dossier"),
             actionName: "la création du dossier", activity: "Création…", renameCreated: true
@@ -530,7 +597,7 @@ final class BrowserModel {
     }
 
     func newTextFile() {
-        guard let folder = operationFolder else { return }
+        guard let folder = operationFolder, !isInTrash else { return }
         perform(
             .createFile(in: folder, name: "Nouveau document texte.txt"),
             actionName: "la création du document", activity: "Création…", renameCreated: true
@@ -751,6 +818,7 @@ final class BrowserModel {
 
         let wasBlocked = blockedDrive != nil
         blockedDrive = nil
+        accessDenied = false
         if resetContent || wasBlocked {
             allItems = []
             items = []
@@ -800,6 +868,7 @@ final class BrowserModel {
                 allItems = []
                 items = []
                 selection = []
+                accessDenied = TrashFolder.isPermissionDenied(error)
                 state = .failed(error.localizedDescription)
                 refreshGit()
             }
@@ -808,6 +877,7 @@ final class BrowserModel {
 
     private func showNoContent(blockedBy drive: UUID?) {
         watcher.stop()
+        accessDenied = false
         blockedDrive = drive
         pendingSelection = []
         pendingRename = nil
@@ -989,6 +1059,8 @@ struct DeleteConfirmation: Identifiable {
     let urls: [URL]
     /// True when the question comes up because the volume has no Trash.
     let becauseNoTrash: Bool
+    /// True when these are all the items of the Trash, which is being emptied.
+    var emptiesTrash = false
 }
 
 /// One entry of the undo stack. `inverse` is filled when the operation it

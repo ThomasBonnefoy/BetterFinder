@@ -57,7 +57,11 @@ final class FileContextMenu: NSObject, NSMenuDelegate {
         menu.addItem(item("Copier", #selector(menuCopy)))
         menu.addItem(.separator())
         menu.addItem(item("Renommer", #selector(menuRename), enabled: selectionCount == 1))
-        menu.addItem(item("Mettre à la corbeille", #selector(menuTrash)))
+        if model.isInTrash {
+            menu.addItem(item("Supprimer définitivement…", #selector(menuDeleteForGood)))
+        } else {
+            menu.addItem(item("Mettre à la corbeille", #selector(menuTrash)))
+        }
         menu.addItem(.separator())
         menu.addItem(item("Copier le chemin d'accès", #selector(menuCopyPath)))
         if model.canAddSelectionToFavorites {
@@ -70,6 +74,16 @@ final class FileContextMenu: NSObject, NSMenuDelegate {
     }
 
     private func buildFolderMenu(_ menu: NSMenu) {
+        if model.isInTrash {
+            // Nothing is created or pasted in the Trash.
+            if model.isOnTrash {
+                menu.addItem(item("Vider la corbeille…", #selector(menuEmptyTrash)))
+                menu.addItem(.separator())
+            }
+            menu.addItem(item("Actualiser", #selector(menuReload)))
+            menu.addItem(item("Afficher dans le Finder", #selector(menuReveal)))
+            return
+        }
         let new = NSMenuItem(title: "Nouveau", action: nil, keyEquivalent: "")
         let submenu = NSMenu()
         submenu.autoenablesItems = false
@@ -98,6 +112,8 @@ final class FileContextMenu: NSObject, NSMenuDelegate {
     @objc private func menuCopy() { model.copySelection() }
     @objc private func menuPaste() { model.paste() }
     @objc private func menuTrash() { model.trashSelection() }
+    @objc private func menuDeleteForGood() { model.askToDeleteSelection() }
+    @objc private func menuEmptyTrash() { model.askToEmptyTrash() }
     @objc private func menuCopyPath() { model.copyPathOfSelection() }
     @objc private func menuShowInFolder() { model.showSelectionInItsFolder() }
     @objc private func menuAddFavorite() { model.addSelectionToFavorites() }

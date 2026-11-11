@@ -18,6 +18,9 @@ struct BrowserCommands: Commands {
             Button("Nouveau document texte") { model?.newTextFile() }
                 .disabled(model == nil)
             Divider()
+            Button("Vider la corbeille…") { model?.askToEmptyTrash() }
+                .disabled(model == nil)
+            Divider()
             Button("Ajouter un lecteur réseau…") { model?.driveEditor = DriveEditorRequest() }
                 .keyboardShortcut("k")
                 .disabled(model == nil)
@@ -74,6 +77,8 @@ struct BrowserCommands: Commands {
             Divider()
             Button(BrowserModel.computerName) { model?.showComputer() }
                 .keyboardShortcut("m", modifiers: [.command, .shift])
+                .disabled(model == nil)
+            Button(DisplayName.trash) { model?.showTrash() }
                 .disabled(model == nil)
             Button("Dossier personnel") { model?.goHome() }
                 .keyboardShortcut("h", modifiers: [.command, .shift])
