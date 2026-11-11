@@ -175,10 +175,10 @@ enum LaunchOptions {
     }
 
     /// True when windows open on the computer's overview, like Explorer on
-    /// "This PC": always, unless the command line names a folder or a share
-    /// (`-StartLocation ~/Documents`).
+    /// "This PC": unless the settings say otherwise or the command line names
+    /// a folder or a share (`-StartLocation ~/Documents`).
     static var startsOnComputer: Bool {
-        guard let location = startLocation else { return true }
+        guard let location = startLocation else { return AppSettings.opensOnComputer }
         return location.compare(BrowserModel.computerName, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
     }
 

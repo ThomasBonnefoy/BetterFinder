@@ -18,7 +18,7 @@ final class BrowserModel {
     private(set) var state: LoadState = .loading
     private(set) var isLocalVolume = true
     private(set) var sort = FileSort()
-    private(set) var showHidden = false
+    private(set) var showHidden = AppSettings.showsHiddenFiles
     private(set) var isEditingAddress = false
     /// Incremented to ask the file list to take the keyboard focus.
     private(set) var listFocusRequests = 0
@@ -166,7 +166,9 @@ final class BrowserModel {
     /// A new tab on the computer's overview (Ctrl+T in Explorer opens its
     /// home page).
     func newTab() {
-        tabOpener?(.computer)
+        tabOpener?(AppSettings.opensOnComputer
+            ? .computer
+            : .folder(Self.normalized(FileManager.default.homeDirectoryForCurrentUser)))
     }
 
     func openInNewTab(_ url: URL) {
