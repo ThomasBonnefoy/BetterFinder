@@ -16,19 +16,24 @@ struct FileListView: View {
     }
 
     private func table(for folder: URL) -> some View {
-        FileTableView(
-            model: model,
-            state: FileTableView.State(
-                folder: folder,
-                items: model.items,
-                selection: model.selection,
-                sort: model.sort,
-                isLocalVolume: model.isLocalVolume,
-                focusRequests: model.listFocusRequests,
-                cutURLs: model.clipboard.cutURLs,
-                renameRequest: model.renameRequest
-            )
+        let state = FileTableView.State(
+            folder: folder,
+            items: model.items,
+            selection: model.selection,
+            sort: model.sort,
+            isLocalVolume: model.isLocalVolume,
+            focusRequests: model.listFocusRequests,
+            cutURLs: model.clipboard.cutURLs,
+            renameRequest: model.renameRequest
         )
+        return Group {
+            switch model.viewMode {
+            case .details:
+                FileTableView(model: model, state: state)
+            case .icons:
+                FileIconsView(model: model, state: state)
+            }
+        }
         .overlay { placeholder }
     }
 

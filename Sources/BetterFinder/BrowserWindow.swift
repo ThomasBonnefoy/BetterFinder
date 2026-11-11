@@ -43,6 +43,13 @@ struct BrowserWindow: View {
                     AddressBar(model: model)
                 }
                 ToolbarItemGroup(placement: .primaryAction) {
+                    Picker("Présentation", selection: $model.viewMode) {
+                        ForEach(ViewMode.allCases, id: \.self) { mode in
+                            Label(mode.title, systemImage: mode.symbol).tag(mode)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .help("Mode d'affichage (Cmd+1, Cmd+2)")
                     Button("Actualiser", systemImage: "arrow.clockwise") { model.reload() }
                         .help("Actualiser")
                     // Always there, unlike the tab bar, which macOS hides

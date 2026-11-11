@@ -1,3 +1,4 @@
+import BetterFinderCore
 import SwiftUI
 
 /// Menu bar commands that act on the frontmost browser window.
@@ -32,6 +33,24 @@ struct BrowserCommands: Commands {
         }
 
         CommandGroup(before: .sidebar) {
+            Picker("Présentation", selection: viewMode) {
+                Text("Détails").tag(ViewMode.details)
+                    .keyboardShortcut("1")
+                Text("Icônes").tag(ViewMode.icons)
+                    .keyboardShortcut("2")
+            }
+            .pickerStyle(.inline)
+            .disabled(model == nil)
+            Menu("Trier par") {
+                ForEach(SortKey.allCases, id: \.self) { key in
+                    Button(Self.title(of: key)) { model?.setSort(FileSort(key: key, ascending: model?.sort.ascending ?? true)) }
+                }
+                Divider()
+                Button("Croissant") { model.map { $0.setSort(FileSort(key: $0.sort.key, ascending: true)) } }
+                Button("Décroissant") { model.map { $0.setSort(FileSort(key: $0.sort.key, ascending: false)) } }
+            }
+            .disabled(model == nil)
+            Divider()
             Button("Actualiser") { model?.reload() }
                 .keyboardShortcut("r")
                 .disabled(model == nil)
@@ -65,6 +84,22 @@ struct BrowserCommands: Commands {
             Button("Modifier l'adresse") { model?.beginEditingAddress() }
                 .keyboardShortcut("l")
                 .disabled(model == nil)
+        }
+    }
+
+    private var viewMode: Binding<ViewMode> {
+        Binding(
+            get: { model?.viewMode ?? .details },
+            set: { model?.viewMode = $0 }
+        )
+    }
+
+    private static func title(of key: SortKey) -> String {
+        switch key {
+        case .name: "Nom"
+        case .dateModified: "Date de modification"
+        case .kind: "Type"
+        case .size: "Taille"
         }
     }
 

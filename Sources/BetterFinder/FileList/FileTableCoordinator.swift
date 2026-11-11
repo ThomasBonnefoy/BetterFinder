@@ -6,7 +6,7 @@ import BetterFinderCore
 /// AppKit can do well: keys, the context menu and in-place renaming.
 @MainActor
 final class FileTableCoordinator: NSObject, NSTableViewDataSource, NSTableViewDelegate,
-    NSTextFieldDelegate, NSMenuDelegate {
+    NSTextFieldDelegate, FileListHost {
     let model: BrowserModel
 
     private weak var table: FileTable?
@@ -27,6 +27,8 @@ final class FileTableCoordinator: NSObject, NSTableViewDataSource, NSTableViewDe
     /// alone (reloading it would close the editor); this is applied after.
     private var latestState: FileTableView.State?
 
+    private var contextMenu: FileContextMenu?
+
     init(model: BrowserModel) {
         self.model = model
     }
@@ -43,10 +45,30 @@ final class FileTableCoordinator: NSObject, NSTableViewDataSource, NSTableViewDe
         table.setDraggingSourceOperationMask([.copy, .move, .generic], forLocal: true)
         table.setDraggingSourceOperationMask([.copy, .generic], forLocal: false)
 
-        let menu = NSMenu()
-        menu.delegate = self
-        menu.autoenablesItems = false
-        table.menu = menu
+        let contextMenu = FileContextMenu(
+            model: model,
+            target: { [weak self] in self?.prepareContextMenu() ?? .background },
+            rename: { [weak self] in self?.beginRenameOfSelection() },
+            quickLook: { [weak self] in self?.toggleQuickLook() }
+        )
+        self.contextMenu = contextMenu
+        table.menu = contextMenu.makeMenu()
+    }
+
+    // MARK: - File list host
+
+    var selectedFileItems: [FileItem] {
+        guard let table else { return [] }
+        return selectedItems(in: table)
+    }
+
+    func beginRenameOfSelection() {
+        guard let table, table.selectedRowIndexes.count == 1 else { return }
+        beginRename(row: table.selectedRow)
+    }
+
+    func toggleQuickLook() {
+        table?.toggleQuickLook()
     }
 
     // MARK: - State from SwiftUI
@@ -236,95 +258,8 @@ final class FileTableCoordinator: NSObject, NSTableViewDataSource, NSTableViewDe
 
     // MARK: - Keyboard
 
-    /// Windows Explorer keys, with Option standing in for Alt.
     func handleKey(_ event: NSEvent) -> Bool {
-        guard let table else { return false }
-        let modifiers = event.modifierFlags.intersection([.command, .option, .control, .shift])
-        let key = event.keyCode
-        let hasSelection = !table.selectedRowIndexes.isEmpty
-
-        if modifiers.isEmpty {
-            switch key {
-            case KeyCode.return, KeyCode.keypadEnter:
-                guard hasSelection else { return false }
-                model.open(selectedItems(in: table))
-                return true
-            case KeyCode.backspace:
-                model.goBack()
-                return true
-            case KeyCode.forwardDelete:
-                guard hasSelection else { return false }
-                model.trashSelection()
-                return true
-            case KeyCode.space:
-                guard hasSelection else { return false }
-                table.toggleQuickLook()
-                return true
-            case KeyCode.f2:
-                guard table.selectedRowIndexes.count == 1 else { return false }
-                beginRename(row: table.selectedRow)
-                return true
-            case KeyCode.f5:
-                model.reload()
-                return true
-            default:
-                return false
-            }
-        }
-
-        if modifiers == .shift, key == KeyCode.forwardDelete {
-            guard hasSelection else { return false }
-            model.askToDeleteSelection()
-            return true
-        }
-
-        if modifiers == .option {
-            switch key {
-            case KeyCode.leftArrow:
-                model.goBack()
-                return true
-            case KeyCode.rightArrow:
-                model.goForward()
-                return true
-            case KeyCode.upArrow:
-                model.goUp()
-                return true
-            default:
-                return false
-            }
-        }
-
-        if modifiers == .command {
-            switch key {
-            case KeyCode.y:
-                guard hasSelection else { return false }
-                table.toggleQuickLook()
-                return true
-            case KeyCode.return, KeyCode.keypadEnter:
-                guard model.canOpenSelectionInNewTabs else { return false }
-                model.openSelectionInNewTabs()
-                return true
-            case KeyCode.downArrow:
-                guard hasSelection else { return false }
-                model.open(selectedItems(in: table))
-                return true
-            case KeyCode.backspace:
-                // The Finder's way to the Trash, for keyboards without Delete.
-                guard hasSelection else { return false }
-                model.trashSelection()
-                return true
-            default:
-                return false
-            }
-        }
-
-        if modifiers == [.command, .option], key == KeyCode.backspace {
-            guard hasSelection else { return false }
-            model.askToDeleteSelection()
-            return true
-        }
-
-        return false
+        FileListKeys.handle(event, host: self)
     }
 
     // MARK: - Renaming in place
@@ -404,96 +339,18 @@ final class FileTableCoordinator: NSObject, NSTableViewDataSource, NSTableViewDe
 
     // MARK: - Context menu
 
-    func menuNeedsUpdate(_ menu: NSMenu) {
-        menu.removeAllItems()
-        guard let table else { return }
-
+    /// Like Explorer, a right-click on an unselected item selects it; one on
+    /// the empty space selects nothing.
+    private func prepareContextMenu() -> FileContextMenu.Target {
+        guard let table else { return .background }
         let row = table.clickedRow
         if items.indices.contains(row) {
-            // Like Explorer, a right-click on an unselected item selects it.
             if !table.selectedRowIndexes.contains(row) {
                 table.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
             }
-            buildItemMenu(menu, selectionCount: table.selectedRowIndexes.count)
-        } else {
-            table.deselectAll(nil)
-            buildFolderMenu(menu)
+            return .items(count: table.selectedRowIndexes.count)
         }
+        table.deselectAll(nil)
+        return .background
     }
-
-    private func buildItemMenu(_ menu: NSMenu, selectionCount: Int) {
-        menu.addItem(item("Ouvrir", #selector(menuOpen)))
-        menu.addItem(item("Coup d'œil", #selector(menuQuickLook)))
-        if model.canOpenSelectionInNewTabs {
-            menu.addItem(item("Ouvrir dans un nouvel onglet", #selector(menuOpenInNewTab)))
-        }
-        menu.addItem(.separator())
-        menu.addItem(item("Couper", #selector(menuCut)))
-        menu.addItem(item("Copier", #selector(menuCopy)))
-        menu.addItem(.separator())
-        menu.addItem(item("Renommer", #selector(menuRename), enabled: selectionCount == 1))
-        menu.addItem(item("Mettre à la corbeille", #selector(menuTrash)))
-        menu.addItem(.separator())
-        menu.addItem(item("Copier le chemin d'accès", #selector(menuCopyPath)))
-        if model.isSearching {
-            menu.addItem(item("Ouvrir l'emplacement du dossier", #selector(menuShowInFolder), enabled: selectionCount == 1))
-        }
-        menu.addItem(item("Afficher dans le Finder", #selector(menuReveal)))
-    }
-
-    private func buildFolderMenu(_ menu: NSMenu) {
-        let new = NSMenuItem(title: "Nouveau", action: nil, keyEquivalent: "")
-        let submenu = NSMenu()
-        submenu.autoenablesItems = false
-        submenu.addItem(item("Dossier", #selector(menuNewFolder)))
-        submenu.addItem(item("Document texte", #selector(menuNewTextFile)))
-        new.submenu = submenu
-        menu.addItem(new)
-        menu.addItem(.separator())
-        menu.addItem(item("Coller", #selector(menuPaste), enabled: model.canPaste))
-        menu.addItem(.separator())
-        menu.addItem(item("Actualiser", #selector(menuReload)))
-        menu.addItem(item("Afficher dans le Finder", #selector(menuReveal)))
-    }
-
-    private func item(_ title: String, _ action: Selector, enabled: Bool = true) -> NSMenuItem {
-        let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
-        item.target = self
-        item.isEnabled = enabled
-        return item
-    }
-
-    @objc private func menuOpen() { model.openSelection() }
-    @objc private func menuQuickLook() { table?.toggleQuickLook() }
-    @objc private func menuOpenInNewTab() { model.openSelectionInNewTabs() }
-    @objc private func menuCut() { model.cutSelection() }
-    @objc private func menuCopy() { model.copySelection() }
-    @objc private func menuPaste() { model.paste() }
-    @objc private func menuTrash() { model.trashSelection() }
-    @objc private func menuCopyPath() { model.copyPathOfSelection() }
-    @objc private func menuShowInFolder() { model.showSelectionInItsFolder() }
-    @objc private func menuReveal() { model.revealSelectionInFinder() }
-    @objc private func menuNewFolder() { model.newFolder() }
-    @objc private func menuNewTextFile() { model.newTextFile() }
-    @objc private func menuReload() { model.reload() }
-
-    @objc private func menuRename() {
-        guard let table, table.selectedRowIndexes.count == 1 else { return }
-        beginRename(row: table.selectedRow)
-    }
-}
-
-private enum KeyCode {
-    static let `return`: UInt16 = 36
-    static let keypadEnter: UInt16 = 76
-    static let backspace: UInt16 = 51
-    static let forwardDelete: UInt16 = 117
-    static let space: UInt16 = 49
-    static let y: UInt16 = 16
-    static let f2: UInt16 = 120
-    static let f5: UInt16 = 96
-    static let leftArrow: UInt16 = 123
-    static let rightArrow: UInt16 = 124
-    static let downArrow: UInt16 = 125
-    static let upArrow: UInt16 = 126
 }

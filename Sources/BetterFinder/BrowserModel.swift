@@ -53,6 +53,12 @@ final class BrowserModel {
     private(set) var renameRequest: RenameRequest?
     /// An error to show to the user.
     var alert: OperationAlert?
+    /// How the folder's content is drawn. Remembered between launches.
+    var viewMode = ViewMode.saved {
+        didSet {
+            if viewMode != oldValue { UserDefaults.standard.set(viewMode.rawValue, forKey: ViewMode.defaultsKey) }
+        }
+    }
     /// Items waiting for the user to confirm their permanent deletion.
     var deleteConfirmation: DeleteConfirmation?
     /// The window's undo manager, so that Edit > Undo covers file operations.
@@ -815,6 +821,34 @@ final class BrowserModel {
 }
 
 /// What the network drive sheet is opened for.
+/// How a folder is drawn.
+enum ViewMode: String, CaseIterable {
+    /// A sortable table: name, date, type, size.
+    case details
+    /// A grid of large icons.
+    case icons
+
+    static let defaultsKey = "ViewMode"
+
+    static var saved: ViewMode {
+        UserDefaults.standard.string(forKey: defaultsKey).flatMap(ViewMode.init) ?? .details
+    }
+
+    var title: String {
+        switch self {
+        case .details: "Détails"
+        case .icons: "Icônes"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .details: "list.bullet"
+        case .icons: "square.grid.2x2"
+        }
+    }
+}
+
 struct DriveEditorRequest: Identifiable {
     let id = UUID()
     /// The drive being edited, or `nil` to add a new one.
