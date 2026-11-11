@@ -4,6 +4,14 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et les n
 
 ## [Non publié]
 
+## [0.9.0] - 2026-11-11
+
+Le Coup d'œil.
+
+### Ajouté
+- `Espace` (ou `Cmd+Y`, ou « Coup d'œil » au clic droit) affiche un aperçu des éléments sélectionnés dans le panneau Coup d'œil de macOS : images, PDF, documents, vidéos, son, texte.
+- Le panneau suit la sélection : les flèches du clavier passent d'un élément à l'autre, y compris quand le panneau est au premier plan. `Espace` le referme.
+
 ## [0.8.0] - 2026-11-11
 
 La recherche.
