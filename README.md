@@ -9,7 +9,7 @@ L'idée de départ : garder les **lecteurs réseau toujours visibles dans la bar
 - **Lecteurs réseau toujours visibles** : chaque lecteur garde sa place dans la barre latérale et montre son état (connecté, disponible, hors ligne). Il se reconnecte tout seul quand le serveur répond de nouveau, si l'option est cochée.
 - **Arborescence dans la barre latérale** : chaque favori, lecteur ou volume se déplie pour montrer ses sous-dossiers ; l'option « Développer jusqu'au dossier ouvert » (menu Présentation) la fait suivre le dossier affiché
 - **Favoris personnalisables** : ajoutez les dossiers de votre choix (bouton « + », clic droit, ou glisser-déposer), retirez-en et remettez-les dans l'ordre voulu
-- **Vue « Ce Mac »** (l'équivalent de « Ce PC ») : dossiers principaux, disques avec leur espace libre, lecteurs réseau avec leur état
+- **Vue « Ce Mac »** (l'équivalent de « Ce PC ») : favoris, disques avec leur espace libre, lecteurs réseau avec leur état
 - **Onglets**, avec la barre d'onglets de macOS : `Cmd+T`, « Ouvrir dans un nouvel onglet » au clic droit
 - Liste détaillée triable (nom, date de modification, type, taille), dossiers en premier, ou grille d'icônes (`Cmd+1`, `Cmd+2`)
 - Couper, copier, coller, renommer, corbeille, nouveau dossier et nouveau document, avec annulation ; rien n'est jamais écrasé

@@ -4,6 +4,11 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et les n
 
 ## [Non publié]
 
+## [0.15.1] - 2026-11-11
+
+### Modifié
+- La première section de la page « Ce Mac » montre vos favoris, dans leur ordre, au lieu des cinq dossiers fixes. Un clic droit sur une tuile permet de la retirer des favoris. Elle s'appelle « Favoris » et la corbeille passe dans « Appareils et lecteurs ».
+
 ## [0.15.0] - 2026-11-11
 
 La corbeille.
