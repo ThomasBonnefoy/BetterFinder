@@ -425,6 +425,9 @@ final class FileTableCoordinator: NSObject, NSTableViewDataSource, NSTableViewDe
         menu.addItem(item("Mettre à la corbeille", #selector(menuTrash)))
         menu.addItem(.separator())
         menu.addItem(item("Copier le chemin d'accès", #selector(menuCopyPath)))
+        if model.isSearching {
+            menu.addItem(item("Ouvrir l'emplacement du dossier", #selector(menuShowInFolder), enabled: selectionCount == 1))
+        }
         menu.addItem(item("Afficher dans le Finder", #selector(menuReveal)))
     }
 
@@ -457,6 +460,7 @@ final class FileTableCoordinator: NSObject, NSTableViewDataSource, NSTableViewDe
     @objc private func menuPaste() { model.paste() }
     @objc private func menuTrash() { model.trashSelection() }
     @objc private func menuCopyPath() { model.copyPathOfSelection() }
+    @objc private func menuShowInFolder() { model.showSelectionInItsFolder() }
     @objc private func menuReveal() { model.revealSelectionInFinder() }
     @objc private func menuNewFolder() { model.newFolder() }
     @objc private func menuNewTextFile() { model.newTextFile() }

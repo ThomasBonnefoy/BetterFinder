@@ -28,6 +28,20 @@ final class BrowserModel {
     /// the drive's page is shown instead of a list that would never load.
     private(set) var blockedDrive: UUID?
     var selection: Set<URL> = []
+    /// What the search field holds. A search looks for names in the current
+    /// folder and all its sub-folders; it ends when the text is emptied or
+    /// when the window goes elsewhere.
+    var searchText = "" {
+        didSet {
+            if searchText != oldValue { startSearch() }
+        }
+    }
+    /// True while the list shows search results instead of the folder.
+    private(set) var isSearching = false
+    /// True while a search is still looking.
+    private(set) var isSearchRunning = false
+    /// Incremented to ask the window to put the cursor in the search field.
+    private(set) var searchFocusRequests = 0
     /// Incremented when the computer's overview is asked to refresh.
     private(set) var computerRefreshes = 0
     /// Non-nil while the "add or edit a network drive" sheet is open.
@@ -52,6 +66,8 @@ final class BrowserModel {
     @ObservationIgnored var tabOpener: (@MainActor (BrowserLocation) -> Void)?
 
     @ObservationIgnored private var allItems: [FileItem] = []
+    @ObservationIgnored private var searchItems: [FileItem] = []
+    @ObservationIgnored private var searchTask: Task<Void, Never>?
     @ObservationIgnored private var loadGeneration = 0
     /// Folder listings still running. A refresh keeps `state` at `.loaded`,
     /// so this is the only way to tell that the list is up to date.
@@ -169,7 +185,11 @@ final class BrowserModel {
         let target = BrowserLocation.folder(Self.normalized(url))
         endEditingAddress()
         guard target != location else {
-            if let itemToSelect { selection = [itemToSelect] }
+            if let itemToSelect {
+                // Showing a search result that is in this very folder.
+                searchText = ""
+                selection = [itemToSelect]
+            }
             return
         }
         history.go(to: target)
@@ -234,6 +254,63 @@ final class BrowserModel {
     private func contentChanged() {
         guard displayedDriveID == nil else { return }
         load(resetContent: false)
+    }
+
+    // MARK: - Search
+
+    /// Whether the search field applies to what the window shows.
+    var canSearch: Bool { operationFolder != nil }
+
+    func focusSearch() {
+        guard canSearch else { return }
+        searchFocusRequests += 1
+    }
+
+    /// (Re)starts the search for the current text, or ends it if the text is
+    /// empty. The previous results stay on screen until the new ones come, so
+    /// that the list does not flicker while typing.
+    private func startSearch() {
+        searchTask?.cancel()
+        searchTask = nil
+
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty, let folder = operationFolder else {
+            let wasSearching = isSearching
+            isSearching = false
+            isSearchRunning = false
+            searchItems = []
+            if wasSearching { applyFilterAndSort() }
+            return
+        }
+
+        if !isSearching {
+            isSearching = true
+            searchItems = []
+            selection = []
+            applyFilterAndSort()
+        }
+        isSearchRunning = true
+
+        let hidden = showHidden
+        searchTask = Task {
+            var found: [FileItem] = []
+            for await batch in FolderSearch.results(in: folder, query: query, showHidden: hidden) {
+                if Task.isCancelled { return }
+                found += batch.map(Self.normalized)
+                searchItems = found
+                applyFilterAndSort()
+            }
+            if Task.isCancelled { return }
+            searchItems = found
+            isSearchRunning = false
+            applyFilterAndSort()
+        }
+    }
+
+    /// Goes to the folder that holds the selected search result.
+    func showSelectionInItsFolder() {
+        guard selection.count == 1, let url = selection.first else { return }
+        navigate(to: url.deletingLastPathComponent(), selecting: url)
     }
 
     // MARK: - Network drives
@@ -320,6 +397,7 @@ final class BrowserModel {
         guard show != showHidden else { return }
         showHidden = show
         applyFilterAndSort()
+        if isSearching { startSearch() }
     }
 
     // MARK: - File operations
@@ -625,6 +703,10 @@ final class BrowserModel {
     private func load(resetContent: Bool) {
         loadGeneration += 1
         let generation = loadGeneration
+        // Going elsewhere ends the search.
+        if resetContent, !searchText.isEmpty {
+            searchText = ""
+        }
 
         // A drive's page, or a folder on a drive whose server is gone: there
         // is nothing to list, and trying would only wait on a dead mount.
@@ -662,6 +744,9 @@ final class BrowserModel {
                 state = .loaded
                 sidebarTree.folderLoaded(url, items: allItems)
                 applyFilterAndSort()
+                // The folder changed (files were moved, deleted…): the
+                // results may be out of date.
+                if isSearching { startSearch() }
                 if !pendingSelection.isEmpty {
                     let found = pendingSelection.intersection(items.map(\.url))
                     pendingSelection = []
@@ -698,7 +783,8 @@ final class BrowserModel {
     }
 
     private func applyFilterAndSort() {
-        let visible = showHidden ? allItems : allItems.filter { !$0.isHidden }
+        let source = isSearching ? searchItems : allItems
+        let visible = showHidden ? source : source.filter { !$0.isHidden }
         items = visible.sorted(by: sort)
         let urls = Set(items.map(\.url))
         if !selection.isSubset(of: urls) {

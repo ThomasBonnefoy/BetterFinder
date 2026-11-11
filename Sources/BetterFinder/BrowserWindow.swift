@@ -10,6 +10,7 @@ struct BrowserWindow: View {
     @Environment(VolumeStore.self) private var volumeStore
     @Environment(DriveMonitor.self) private var driveMonitor
     @Environment(\.undoManager) private var undoManager
+    @FocusState private var searchFocused: Bool
 
     var body: some View {
         NavigationSplitView {
@@ -22,6 +23,9 @@ struct BrowserWindow: View {
                 StatusBar(model: model)
             }
             .navigationTitle(model.title)
+            .searchable(text: $model.searchText, placement: .toolbar, prompt: "Rechercher")
+            .searchFocused($searchFocused)
+            .onChange(of: model.searchFocusRequests) { searchFocused = true }
             .toolbar(removing: .title)
             .toolbar {
                 ToolbarItemGroup(placement: .navigation) {

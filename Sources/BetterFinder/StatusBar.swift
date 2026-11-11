@@ -10,13 +10,22 @@ struct StatusBar: View {
             // A drive's page and the computer's overview list no file:
             // counting items would be noise.
             if model.displayedDriveID == nil, !model.isOnComputer {
-                Text(Self.countText(model.items.count))
+                Text(model.isSearching
+                    ? Self.resultsText(model.items.count)
+                    : Self.countText(model.items.count))
                 let selected = model.selectedItems
                 if !selected.isEmpty {
                     Text(Self.selectionText(selected))
                 }
+                if model.isSearching, selected.count == 1, let item = selected.first {
+                    Text("Dans " + Self.folderText(of: item.url))
+                }
             }
             Spacer()
+            if model.isSearchRunning {
+                ProgressView().controlSize(.mini)
+                Text("Recherche…")
+            }
             if let activity = model.activity {
                 ProgressView().controlSize(.mini)
                 Text(activity)
@@ -32,6 +41,15 @@ struct StatusBar: View {
 
     static func countText(_ count: Int) -> String {
         count > 1 ? "\(count) éléments" : "\(count) élément"
+    }
+
+    static func resultsText(_ count: Int) -> String {
+        count > 1 ? "\(count) résultats" : "\(count) résultat"
+    }
+
+    /// Folder holding an item, with the home folder written as "~".
+    static func folderText(of url: URL) -> String {
+        (url.deletingLastPathComponent().path as NSString).abbreviatingWithTildeInPath
     }
 
     static func selectionText(_ selected: [FileItem]) -> String {

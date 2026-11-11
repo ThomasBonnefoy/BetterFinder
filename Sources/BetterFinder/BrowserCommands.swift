@@ -59,6 +59,9 @@ struct BrowserCommands: Commands {
             Button("Dossier personnel") { model?.goHome() }
                 .keyboardShortcut("h", modifiers: [.command, .shift])
                 .disabled(model == nil)
+            Button("Rechercher") { model?.focusSearch() }
+                .keyboardShortcut("f")
+                .disabled(model?.canSearch != true)
             Button("Modifier l'adresse") { model?.beginEditingAddress() }
                 .keyboardShortcut("l")
                 .disabled(model == nil)

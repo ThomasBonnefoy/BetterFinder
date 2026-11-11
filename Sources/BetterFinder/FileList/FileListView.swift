@@ -48,7 +48,18 @@ struct FileListView: View {
                 Button("Réessayer") { model.reload() }
             }
         case .loaded:
-            if model.items.isEmpty {
+            if model.isSearching {
+                if model.items.isEmpty {
+                    if model.isSearchRunning {
+                        ProgressView()
+                            .controlSize(.small)
+                            .allowsHitTesting(false)
+                    } else {
+                        ContentUnavailableView.search(text: model.searchText)
+                            .allowsHitTesting(false)
+                    }
+                }
+            } else if model.items.isEmpty {
                 ContentUnavailableView("Ce dossier est vide", systemImage: "folder")
                     .allowsHitTesting(false)
             }

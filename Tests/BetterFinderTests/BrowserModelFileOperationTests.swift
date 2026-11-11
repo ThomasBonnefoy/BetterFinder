@@ -99,6 +99,58 @@ import BetterFinderCore
         #expect(names(in: target) == [])
     }
 
+    // MARK: - Search
+
+    private func searched(_ model: BrowserModel, for text: String) async throws {
+        model.searchText = text
+        for _ in 0..<500 {
+            try await Task.sleep(for: .milliseconds(10))
+            if !model.isSearchRunning { return }
+        }
+        Issue.record("The search did not finish")
+    }
+
+    @Test func searchFindsItemsInSubfolders() async throws {
+        defer { cleanUp() }
+        let model = try await model(at: root)
+
+        try await searched(model, for: "a.t")
+        #expect(model.isSearching)
+        #expect(model.items.map(\.url) == [source.appending(path: "a.txt")])
+
+        // Emptying the field brings the folder back.
+        model.searchText = ""
+        #expect(!model.isSearching)
+        #expect(model.items.map(\.name) == ["Source", "Target"])
+    }
+
+    @Test func searchEndsWhenWentElsewhere() async throws {
+        defer { cleanUp() }
+        let model = try await model(at: root)
+
+        try await searched(model, for: "txt")
+        #expect(model.items.count == 2)
+        model.navigate(to: target)
+        try await settled(model)
+
+        #expect(model.searchText.isEmpty)
+        #expect(!model.isSearching)
+    }
+
+    @Test func showingAResultsFolderLeavesTheSearch() async throws {
+        defer { cleanUp() }
+        let model = try await model(at: root)
+
+        try await searched(model, for: "b.txt")
+        model.selection = [source.appending(path: "b.txt")]
+        model.showSelectionInItsFolder()
+        try await settled(model)
+
+        #expect(model.currentURL == source)
+        #expect(!model.isSearching)
+        #expect(model.selection == [source.appending(path: "b.txt")])
+    }
+
     // MARK: - Copy, cut, paste
 
     @Test func copyThenPasteInAnotherFolder() async throws {
