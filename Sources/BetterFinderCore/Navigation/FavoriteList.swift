@@ -67,6 +67,20 @@ public struct FavoriteList: Equatable, Sendable {
         urls.insert(contentsOf: moved, at: target)
     }
 
+    /// Puts `url` just before or just after `target`. Does nothing when
+    /// either is not in the list or when they are the same.
+    public mutating func move(_ url: URL, relativeTo target: URL, after: Bool) {
+        let url = Self.normalized(url)
+        let target = Self.normalized(target)
+        guard url != target,
+              let from = urls.firstIndex(of: url),
+              urls.contains(target)
+        else { return }
+        urls.remove(at: from)
+        let index = urls.firstIndex(of: target) ?? urls.count
+        urls.insert(url, at: after ? index + 1 : index)
+    }
+
     public func canMoveUp(_ url: URL) -> Bool {
         (urls.firstIndex(of: Self.normalized(url)) ?? 0) > 0
     }

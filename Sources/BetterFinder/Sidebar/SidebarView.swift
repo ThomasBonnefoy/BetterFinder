@@ -33,18 +33,9 @@ struct SidebarView: View {
             Section {
                 ForEach(favorites) { favorite in
                     FolderBranch(node: FolderTreeNode(root: favorite.url, url: favorite.url), model: model) {
-                        Label(favorite.name, systemImage: favorite.symbol)
-                            .sidebarRow { model.navigate(to: favorite.url) }
-                            .tag(SidebarItem.place(favorite.url))
+                        FavoriteRow(favorite: favorite, model: model)
                             .contextMenu { favoriteMenu(for: favorite.url) }
-                            .folderDrop(on: favorite.url, model: model)
                     }
-                }
-                // Drag a favorite to reorder, or drag a folder between two
-                // of them (from the list, another window or the Finder).
-                .onMove { favoriteStore.move(fromOffsets: $0, toOffset: $1) }
-                .onInsert(of: [.fileURL]) { index, providers in
-                    addFavorites(from: providers, at: index)
                 }
             } header: {
                 HStack {
@@ -54,6 +45,14 @@ struct SidebarView: View {
                         .labelStyle(.iconOnly)
                         .buttonStyle(.plain)
                         .help("Ajouter un dossier aux favoris")
+                }
+                // Drop a folder on the title to add it.
+                .contentShape(Rectangle())
+                .dropDestination(for: URL.self) { urls, _ in
+                    let folders = urls.filter(Self.isFolder)
+                    guard !folders.isEmpty else { return false }
+                    favoriteStore.add(folders)
+                    return true
                 }
             }
 
@@ -221,20 +220,10 @@ struct SidebarView: View {
         favoriteStore.add(panel.urls)
     }
 
-    /// Folders dropped between two favorites. Files are ignored.
-    private func addFavorites(from providers: [NSItemProvider], at index: Int) {
-        for provider in providers {
-            _ = provider.loadObject(ofClass: URL.self) { url, _ in
-                guard let url, url.isFileURL else { return }
-                var isDirectory: ObjCBool = false
-                guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory),
-                      isDirectory.boolValue
-                else { return }
-                Task { @MainActor in
-                    favoriteStore.add([url], at: index)
-                }
-            }
-        }
+    private static func isFolder(_ url: URL) -> Bool {
+        var isDirectory: ObjCBool = false
+        return url.isFileURL && FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory)
+            && isDirectory.boolValue
     }
 
     // MARK: - Folder tree
@@ -319,6 +308,40 @@ extension View {
             guard let folder else { return false }
             return model.drop(urls.filter(\.isFileURL), into: folder)
         }
+    }
+}
+
+/// A favorite's row. Drag it to reorder: dropped on the upper half of
+/// another favorite it goes before, on the lower half after.
+private struct FavoriteRow: View {
+    let favorite: Favorite
+    let model: BrowserModel
+    @State private var height: CGFloat = 24
+
+    var body: some View {
+        Label(favorite.name, systemImage: favorite.symbol)
+            .sidebarRow { model.navigate(to: favorite.url) }
+            .tag(SidebarItem.place(favorite.url))
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height = $0 }
+            .draggable(Self.payload(for: favorite.url))
+            .dropDestination(for: String.self) { texts, location in
+                guard let path = texts.compactMap(Self.path(in:)).first else { return false }
+                FavoriteStore.shared.move(
+                    URL(filePath: path),
+                    relativeTo: favorite.url,
+                    after: location.y > height / 2
+                )
+                return true
+            }
+            .folderDrop(on: favorite.url, model: model)
+    }
+
+    private static let prefix = "betterfinder-favorite:"
+
+    private static func payload(for url: URL) -> String { prefix + url.path }
+
+    private static func path(in text: String) -> String? {
+        text.hasPrefix(prefix) ? String(text.dropFirst(prefix.count)) : nil
     }
 }
 

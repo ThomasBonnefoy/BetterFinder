@@ -63,6 +63,18 @@ import Testing
         #expect(names(favorites) == ["b", "d", "e", "a", "c"])
     }
 
+    @Test func movesNextToAnotherFavorite() {
+        var favorites = list("a", "b", "c", "d")
+        favorites.move(url("d"), relativeTo: url("b"), after: false)
+        #expect(names(favorites) == ["a", "d", "b", "c"])
+        favorites.move(url("a"), relativeTo: url("c"), after: true)
+        #expect(names(favorites) == ["d", "b", "c", "a"])
+        favorites.move(url("b"), relativeTo: url("b"), after: true)
+        favorites.move(url("zzz"), relativeTo: url("b"), after: true)
+        favorites.move(url("b"), relativeTo: url("zzz"), after: true)
+        #expect(names(favorites) == ["d", "b", "c", "a"])
+    }
+
     @Test func moveByOneStep() {
         var favorites = list("a", "b", "c")
         favorites.moveDown(url("a"))

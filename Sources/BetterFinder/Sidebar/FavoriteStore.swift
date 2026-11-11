@@ -49,6 +49,13 @@ final class FavoriteStore {
         change(to: updated)
     }
 
+    /// Puts a favorite just before or after another one.
+    func move(_ url: URL, relativeTo target: URL, after: Bool) {
+        var updated = list
+        updated.move(url, relativeTo: target, after: after)
+        change(to: updated)
+    }
+
     func moveUp(_ url: URL) {
         var updated = list
         updated.moveUp(url)
