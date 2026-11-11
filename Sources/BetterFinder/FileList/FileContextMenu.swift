@@ -60,6 +60,9 @@ final class FileContextMenu: NSObject, NSMenuDelegate {
         menu.addItem(item("Mettre à la corbeille", #selector(menuTrash)))
         menu.addItem(.separator())
         menu.addItem(item("Copier le chemin d'accès", #selector(menuCopyPath)))
+        if model.canAddSelectionToFavorites {
+            menu.addItem(item("Ajouter aux favoris", #selector(menuAddFavorite)))
+        }
         if model.isSearching {
             menu.addItem(item("Ouvrir l'emplacement du dossier", #selector(menuShowInFolder), enabled: selectionCount == 1))
         }
@@ -97,6 +100,7 @@ final class FileContextMenu: NSObject, NSMenuDelegate {
     @objc private func menuTrash() { model.trashSelection() }
     @objc private func menuCopyPath() { model.copyPathOfSelection() }
     @objc private func menuShowInFolder() { model.showSelectionInItsFolder() }
+    @objc private func menuAddFavorite() { model.addSelectionToFavorites() }
     @objc private func menuReveal() { model.revealSelectionInFinder() }
     @objc private func menuNewFolder() { model.newFolder() }
     @objc private func menuNewTextFile() { model.newTextFile() }

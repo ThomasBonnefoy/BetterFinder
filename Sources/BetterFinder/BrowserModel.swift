@@ -534,6 +534,16 @@ final class BrowserModel {
         clipboard.copyText(paths.joined(separator: "\n"))
     }
 
+    /// True when the selection holds folders that are not favorites yet.
+    var canAddSelectionToFavorites: Bool {
+        let folders = selectedItems.filter(\.isBrowsable)
+        return !folders.isEmpty && folders.contains { !FavoriteStore.shared.contains($0.url) }
+    }
+
+    func addSelectionToFavorites() {
+        FavoriteStore.shared.add(selectedItems.filter(\.isBrowsable).map(\.url))
+    }
+
     func revealSelectionInFinder() {
         let urls = selectedItems.map(\.url)
         if urls.isEmpty, let folder = currentURL {

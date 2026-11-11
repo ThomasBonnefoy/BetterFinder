@@ -59,6 +59,12 @@ struct FolderRow: View {
                 Button("Ouvrir") { model.navigate(to: folder.url) }
                 Button("Ouvrir dans un nouvel onglet") { model.openInNewTab(folder.url) }
                 Divider()
+                if FavoriteStore.shared.contains(folder.url) {
+                    Button("Retirer des favoris") { FavoriteStore.shared.remove(folder.url) }
+                } else {
+                    Button("Ajouter aux favoris") { FavoriteStore.shared.add([folder.url]) }
+                }
+                Divider()
                 Button("Copier le chemin d'accès") { model.clipboard.copyText(folder.url.path) }
                 Button("Afficher dans le Finder") {
                     NSWorkspace.shared.activateFileViewerSelecting([folder.url])

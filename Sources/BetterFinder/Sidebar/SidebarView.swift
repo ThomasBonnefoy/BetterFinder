@@ -20,7 +20,9 @@ struct SidebarView: View {
     /// Explorer's "Expand to open folder".
     @AppStorage(SidebarSettings.followsLocationKey) private var followsLocation = false
 
-    private let favorites = Favorite.defaults
+    private var favoriteStore: FavoriteStore { .shared }
+    private var favorites: [Favorite] { favoriteStore.urls.map(Favorite.init(url:)) }
+    @State private var confirmsFavoritesReset = false
 
     var body: some View {
         List(selection: selection) {
@@ -28,15 +30,30 @@ struct SidebarView: View {
                 .sidebarRow { model.showComputer() }
                 .tag(SidebarItem.computer)
 
-            Section("Favoris") {
+            Section {
                 ForEach(favorites) { favorite in
                     FolderBranch(node: FolderTreeNode(root: favorite.url, url: favorite.url), model: model) {
                         Label(favorite.name, systemImage: favorite.symbol)
                             .sidebarRow { model.navigate(to: favorite.url) }
                             .tag(SidebarItem.place(favorite.url))
-                            .contextMenu { placeMenu(for: favorite.url) }
+                            .contextMenu { favoriteMenu(for: favorite.url) }
                             .folderDrop(on: favorite.url, model: model)
                     }
+                }
+                // Drag a favorite to reorder, or drag a folder between two
+                // of them (from the list, another window or the Finder).
+                .onMove { favoriteStore.move(fromOffsets: $0, toOffset: $1) }
+                .onInsert(of: [.fileURL]) { index, providers in
+                    addFavorites(from: providers, at: index)
+                }
+            } header: {
+                HStack {
+                    Text("Favoris")
+                    Spacer()
+                    Button("Ajouter un dossier aux favoris", systemImage: "plus") { chooseFavorites() }
+                        .labelStyle(.iconOnly)
+                        .buttonStyle(.plain)
+                        .help("Ajouter un dossier aux favoris")
                 }
             }
 
@@ -92,6 +109,15 @@ struct SidebarView: View {
         // A volume or a drive just showed up: the current folder may be on it.
         .onChange(of: treeRoots) { revealCurrentFolder() }
         .confirmationDialog(
+            "Rétablir les favoris par défaut ?",
+            isPresented: $confirmsFavoritesReset
+        ) {
+            Button("Rétablir", role: .destructive) { favoriteStore.reset() }
+            Button("Annuler", role: .cancel) {}
+        } message: {
+            Text("Votre liste de favoris est remplacée par la liste d'origine. Les dossiers ne sont pas touchés.")
+        }
+        .confirmationDialog(
             "Retirer « \(driveToRemove?.name ?? "") » de la barre latérale ?",
             isPresented: Binding(
                 get: { driveToRemove != nil },
@@ -130,6 +156,7 @@ struct SidebarView: View {
         if case .mounted(let folder) = status {
             Button("Ouvrir") { model.openDrive(drive.id) }
             Button("Ouvrir dans un nouvel onglet") { model.openInNewTab(folder) }
+            favoriteToggle(for: BrowserModel.normalized(folder))
         } else {
             Button("Connecter") { model.openDrive(drive.id) }
                 .disabled(status == .connecting)
@@ -152,6 +179,62 @@ struct SidebarView: View {
     private func placeMenu(for url: URL) -> some View {
         Button("Ouvrir") { model.navigate(to: url) }
         Button("Ouvrir dans un nouvel onglet") { model.openInNewTab(url) }
+        Divider()
+        favoriteToggle(for: url)
+    }
+
+    // MARK: - Favorites
+
+    /// Menu of a favorite: open, reorder, remove.
+    @ViewBuilder
+    private func favoriteMenu(for url: URL) -> some View {
+        Button("Ouvrir") { model.navigate(to: url) }
+        Button("Ouvrir dans un nouvel onglet") { model.openInNewTab(url) }
+        Divider()
+        Button("Monter") { favoriteStore.moveUp(url) }
+            .disabled(!favoriteStore.list.canMoveUp(url))
+        Button("Descendre") { favoriteStore.moveDown(url) }
+            .disabled(!favoriteStore.list.canMoveDown(url))
+        Divider()
+        Button("Retirer des favoris") { favoriteStore.remove(url) }
+        Button("Rétablir les favoris par défaut…") { confirmsFavoritesReset = true }
+    }
+
+    @ViewBuilder
+    private func favoriteToggle(for url: URL) -> some View {
+        if favoriteStore.contains(url) {
+            Button("Retirer des favoris") { favoriteStore.remove(url) }
+        } else {
+            Button("Ajouter aux favoris") { favoriteStore.add([url]) }
+        }
+    }
+
+    /// "+" of the Favorites header: pick folders in a panel.
+    private func chooseFavorites() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.allowsMultipleSelection = true
+        panel.prompt = "Ajouter"
+        panel.message = "Choisissez les dossiers à ajouter aux favoris."
+        guard panel.runModal() == .OK else { return }
+        favoriteStore.add(panel.urls)
+    }
+
+    /// Folders dropped between two favorites. Files are ignored.
+    private func addFavorites(from providers: [NSItemProvider], at index: Int) {
+        for provider in providers {
+            _ = provider.loadObject(ofClass: URL.self) { url, _ in
+                guard let url, url.isFileURL else { return }
+                var isDirectory: ObjCBool = false
+                guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory),
+                      isDirectory.boolValue
+                else { return }
+                Task { @MainActor in
+                    favoriteStore.add([url], at: index)
+                }
+            }
+        }
     }
 
     // MARK: - Folder tree
@@ -239,7 +322,7 @@ extension View {
     }
 }
 
-/// A fixed shortcut to one of the user's main folders.
+/// A shortcut to a folder.
 struct Favorite: Identifiable {
     let url: URL
     let name: String
@@ -247,6 +330,22 @@ struct Favorite: Identifiable {
 
     var id: URL { url }
 
+    /// A favorite for a folder: the standard ones keep their own symbol.
+    init(url: URL) {
+        let normalized = BrowserModel.normalized(url)
+        self.url = normalized
+        name = DisplayName.of(normalized)
+        symbol = Self.defaults.first { $0.url == normalized }?.symbol ?? "folder"
+    }
+
+    init(url: URL, name: String, symbol: String) {
+        self.url = url
+        self.name = name
+        self.symbol = symbol
+    }
+
+    /// The main folders of the user: what "Ce Mac" shows, and the favorites
+    /// of a fresh install.
     static var defaults: [Favorite] {
         let files = FileManager.default
         let home = files.homeDirectoryForCurrentUser
