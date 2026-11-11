@@ -329,6 +329,11 @@ final class BrowserModel {
         displayedDriveID == nil ? currentURL : nil
     }
 
+    /// Whether files can be dropped on the list itself.
+    var canDropIntoCurrentFolder: Bool {
+        operationFolder != nil
+    }
+
     var canPaste: Bool {
         operationFolder != nil && clipboard.hasFiles
     }
@@ -357,6 +362,38 @@ final class BrowserModel {
         } else {
             perform(.copy(sources: content.urls, to: folder), actionName: "la copie", activity: "Copie…")
         }
+    }
+
+    /// What dropping `urls` on `folder` would do with the keys held now, or
+    /// `nil` when the drop is refused.
+    static func dropMode(for urls: [URL], into folder: URL) -> TransferMode? {
+        let modifiers = NSEvent.modifierFlags
+        return DropPlan.mode(
+            for: urls,
+            into: folder,
+            copyRequested: modifiers.contains(.option),
+            moveRequested: modifiers.contains(.command)
+        )
+    }
+
+    /// Files dropped on a folder, from this window, another one or another app.
+    @discardableResult
+    func drop(_ urls: [URL], into folder: URL, mode: TransferMode) -> Bool {
+        guard !urls.isEmpty else { return false }
+        switch mode {
+        case .copy:
+            perform(.copy(sources: urls, to: folder), actionName: "la copie", activity: "Copie…")
+        case .move:
+            perform(.move(sources: urls, to: folder), actionName: "le déplacement", activity: "Déplacement…")
+        }
+        return true
+    }
+
+    /// Drop on the sidebar or on a folder, with the keys held at that moment.
+    @discardableResult
+    func drop(_ urls: [URL], into folder: URL) -> Bool {
+        guard let mode = Self.dropMode(for: urls, into: folder) else { return false }
+        return drop(urls, into: folder, mode: mode)
     }
 
     func trashSelection() {

@@ -38,6 +38,10 @@ final class FileTableCoordinator: NSObject, NSTableViewDataSource, NSTableViewDe
         table.delegate = self
         table.target = self
         table.doubleAction = #selector(rowDoubleClicked)
+        table.registerForDraggedTypes([.fileURL])
+        // Out of the window the Finder and others get a copy; inside, a move.
+        table.setDraggingSourceOperationMask([.copy, .move, .generic], forLocal: true)
+        table.setDraggingSourceOperationMask([.copy, .generic], forLocal: false)
 
         let menu = NSMenu()
         menu.delegate = self
@@ -158,6 +162,57 @@ final class FileTableCoordinator: NSObject, NSTableViewDataSource, NSTableViewDe
 
     private func selectedItems(in table: NSTableView) -> [FileItem] {
         table.selectedRowIndexes.compactMap { items.indices.contains($0) ? items[$0] : nil }
+    }
+
+    // MARK: - Drag and drop
+
+    func tableView(_ tableView: NSTableView, pasteboardWriterForRow row: Int) -> (any NSPasteboardWriting)? {
+        guard items.indices.contains(row) else { return nil }
+        return items[row].url as NSURL
+    }
+
+    /// The folder a drop at this position lands in: the folder under the
+    /// pointer, else the one shown.
+    private func dropTarget(row: Int, operation: NSTableView.DropOperation) -> URL? {
+        if operation == .on, items.indices.contains(row), items[row].isBrowsable {
+            return items[row].url
+        }
+        return model.canDropIntoCurrentFolder ? folder : nil
+    }
+
+    private func droppedURLs(_ info: any NSDraggingInfo) -> [URL] {
+        info.draggingPasteboard.readObjects(
+            forClasses: [NSURL.self],
+            options: [.urlReadingFileURLsOnly: true]
+        ) as? [URL] ?? []
+    }
+
+    func tableView(
+        _ tableView: NSTableView,
+        validateDrop info: any NSDraggingInfo,
+        proposedRow row: Int,
+        proposedDropOperation operation: NSTableView.DropOperation
+    ) -> NSDragOperation {
+        guard let target = dropTarget(row: row, operation: operation),
+              let mode = BrowserModel.dropMode(for: droppedURLs(info), into: target)
+        else { return [] }
+        // Highlight the folder under the pointer, else the whole list.
+        if target == folder {
+            tableView.setDropRow(-1, dropOperation: .on)
+        } else {
+            tableView.setDropRow(row, dropOperation: .on)
+        }
+        return mode == .copy ? .copy : .move
+    }
+
+    func tableView(
+        _ tableView: NSTableView,
+        acceptDrop info: any NSDraggingInfo,
+        row: Int,
+        dropOperation operation: NSTableView.DropOperation
+    ) -> Bool {
+        guard let target = dropTarget(row: row, operation: operation) else { return false }
+        return model.drop(droppedURLs(info), into: target)
     }
 
     // MARK: - Mouse

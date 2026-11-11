@@ -35,6 +35,7 @@ struct SidebarView: View {
                             .sidebarRow { model.navigate(to: favorite.url) }
                             .tag(SidebarItem.place(favorite.url))
                             .contextMenu { placeMenu(for: favorite.url) }
+                            .folderDrop(on: favorite.url, model: model)
                     }
                 }
             }
@@ -80,6 +81,7 @@ struct SidebarView: View {
                             .sidebarRow { model.navigate(to: url) }
                             .tag(SidebarItem.place(url))
                             .contextMenu { placeMenu(for: url) }
+                            .folderDrop(on: url, model: model)
                     }
                 }
             }
@@ -111,6 +113,7 @@ struct SidebarView: View {
             .sidebarRow { model.openDrive(drive.id) }
             .tag(SidebarItem.drive(drive.id))
             .contextMenu { driveMenu(for: drive) }
+            .folderDrop(on: mountedRoot(of: drive), model: model)
     }
 
     /// Root folder of a drive whose content can be read right now.
@@ -221,6 +224,18 @@ extension View {
         frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
             .simultaneousGesture(TapGesture().onEnded(action))
+    }
+}
+
+extension View {
+    /// Lets files be dropped on a row that stands for a folder. Nothing
+    /// happens when the row has no folder to receive them (a drive that is
+    /// not connected).
+    func folderDrop(on folder: URL?, model: BrowserModel) -> some View {
+        dropDestination(for: URL.self) { urls, _ in
+            guard let folder else { return false }
+            return model.drop(urls.filter(\.isFileURL), into: folder)
+        }
     }
 }
 

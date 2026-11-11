@@ -54,6 +54,7 @@ struct FolderRow: View {
         Label(folder.name, systemImage: "folder")
             .sidebarRow { model.navigate(to: folder.url) }
             .tag(SidebarItem.folder(node))
+            .folderDrop(on: folder.url, model: model)
             .contextMenu {
                 Button("Ouvrir") { model.navigate(to: folder.url) }
                 Button("Ouvrir dans un nouvel onglet") { model.openInNewTab(folder.url) }
