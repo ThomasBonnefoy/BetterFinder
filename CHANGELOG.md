@@ -4,6 +4,18 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et les n
 
 ## [Non publié]
 
+## [0.12.0] - 2026-11-11
+
+Des favoris à votre façon.
+
+### Ajouté
+- La liste des favoris est la vôtre : elle est enregistrée dans `~/Library/Application Support/BetterFinder/favorites.json` et commune à toutes les fenêtres. Au premier lancement, elle contient les cinq dossiers habituels (dossier personnel, Bureau, Documents, Téléchargements, Applications).
+- Ajouter un dossier : bouton « + » de la section Favoris, « Ajouter aux favoris » au clic droit sur un dossier (liste, arborescence, volume, lecteur réseau), ou glisser un dossier entre deux favoris, depuis la liste, une autre fenêtre ou le Finder.
+- Retirer : « Retirer des favoris » au clic droit. Le dossier n'est pas touché.
+- Réordonner : glisser un favori à sa place, ou « Monter » et « Descendre » au clic droit.
+- « Rétablir les favoris par défaut… » au clic droit sur un favori.
+- La page « Ce Mac » garde ses dossiers principaux habituels.
+
 ## [0.11.0] - 2026-11-11
 
 Les réglages.
