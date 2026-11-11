@@ -4,6 +4,20 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et les n
 
 ## [Non publié]
 
+## [0.15.0] - 2026-11-11
+
+La corbeille.
+
+### Ajouté
+- Une ligne « Corbeille » à la fin des emplacements de la barre latérale, et une tuile « Corbeille » dans la page « Ce Mac ». Elles ouvrent la corbeille ; la ligne de la barre latérale accepte aussi des fichiers glissés dessus, qui sont mis à la corbeille (et peuvent être remis avec `Cmd+Z`). Menu « Aller > Corbeille ».
+- « Vider la corbeille… » au clic droit sur la ligne, sur la tuile ou sur le vide de la corbeille, et dans le menu Fichier : une confirmation est demandée, la suppression est définitive.
+- Dans la corbeille, `Suppr` et le menu contextuel proposent « Supprimer définitivement… » au lieu de remettre à la corbeille ; on n'y colle ni ne crée rien. Glisser un élément hors de la corbeille le remet dans le dossier voulu.
+- Quand macOS refuse l'accès à un dossier, une page l'explique et ouvre les réglages de confidentialité, au lieu d'un message d'erreur technique.
+
+### À savoir
+- macOS protège la corbeille : pour y voir les fichiers, BetterFinder doit être ajouté dans Réglages Système > Confidentialité et sécurité > Accès complet au disque, puis relancé. Mettre un fichier à la corbeille n'en a pas besoin. L'app n'a pas de signature de développeur : après une mise à jour, il peut falloir retirer BetterFinder de la liste puis l'y remettre.
+- Seule la corbeille du dossier personnel est gérée, pas celles des autres disques.
+
 ## [0.14.0] - 2026-11-11
 
 Le dernier commit et le changement de branche.

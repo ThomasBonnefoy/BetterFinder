@@ -17,6 +17,7 @@ L'idée de départ : garder les **lecteurs réseau toujours visibles dans la bar
 - Recherche par nom dans le dossier et ses sous-dossiers (`Cmd+F`), sans tenir compte des accents ni des majuscules
 - Coup d'œil : `Espace` affiche un aperçu du fichier sélectionné
 - **Infos Git** : dans un dépôt, la barre d'état montre la branche, les commits à envoyer ou à recevoir, le nombre de fichiers changés et le dernier commit ; un clic sur la branche permet d'en changer ; une lettre de couleur marque les fichiers modifiés, ajoutés ou non suivis
+- **Corbeille** dans la barre latérale et dans « Ce Mac » : on y glisse des fichiers, on la vide avec confirmation. Pour en voir le contenu, macOS demande d'ajouter BetterFinder dans Réglages Système > Confidentialité et sécurité > Accès complet au disque
 - Menu contextuel au clic droit
 - Barre d'adresse : fil d'Ariane cliquable, ou chemin à saisir (`Cmd+L`)
 - Précédent, suivant, dossier parent
