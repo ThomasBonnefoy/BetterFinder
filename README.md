@@ -13,6 +13,7 @@ L'idée de départ : garder les **lecteurs réseau toujours visibles dans la bar
 - Liste détaillée triable (nom, date de modification, type, taille), dossiers en premier
 - Couper, copier, coller, renommer, corbeille, nouveau dossier et nouveau document, avec annulation ; rien n'est jamais écrasé
 - Glisser-déposer entre dossiers, fenêtres, onglets, barre latérale et Finder : déplacement dans le même disque, copie vers un autre (`Option` force la copie, `Cmd` le déplacement)
+- Recherche par nom dans le dossier et ses sous-dossiers (`Cmd+F`), sans tenir compte des accents ni des majuscules
 - Menu contextuel au clic droit
 - Barre d'adresse : fil d'Ariane cliquable, ou chemin à saisir (`Cmd+L`)
 - Précédent, suivant, dossier parent
@@ -53,6 +54,7 @@ Le mot de passe est demandé par macOS à la première connexion et rangé dans 
 | Annuler, rétablir | `Cmd+Z`, `Cmd+Maj+Z` |
 | Copier le chemin d'accès | `Cmd+Maj+C` |
 | Modifier l'adresse | `Cmd+L` |
+| Rechercher | `Cmd+F` |
 | Ajouter un lecteur réseau | `Cmd+K` |
 | Actualiser | `Cmd+R` ou `F5` |
 | Afficher les fichiers masqués | `Cmd+Maj+.` |

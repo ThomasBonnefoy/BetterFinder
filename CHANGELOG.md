@@ -4,6 +4,16 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et les n
 
 ## [Non publié]
 
+## [0.8.0] - 2026-11-11
+
+La recherche.
+
+### Ajouté
+- Champ de recherche dans la barre d'outils (`Cmd+F`) : cherche dans le dossier affiché et dans tous ses sous-dossiers, pendant la frappe. Les résultats arrivent au fur et à mesure et la barre d'état indique « Recherche… » tant qu'elle n'est pas terminée.
+- Un nom correspond s'il contient tous les mots saisis, sans tenir compte des majuscules ni des accents. Les fichiers masqués ne sont cherchés que s'ils sont affichés ; l'intérieur des applications n'est pas parcouru.
+- La barre d'état donne le nombre de résultats et, pour un résultat sélectionné, le dossier qui le contient. Clic droit : « Ouvrir l'emplacement du dossier ».
+- La recherche s'arrête quand le champ est vidé ou quand la fenêtre change de dossier. Elle s'applique aux résultats triés, renommés, copiés ou supprimés comme à n'importe quelle liste.
+
 ## [0.7.0] - 2026-11-11
 
 Le glisser-déposer.
