@@ -16,7 +16,7 @@ L'idée de départ : garder les **lecteurs réseau toujours visibles dans la bar
 - Glisser-déposer entre dossiers, fenêtres, onglets, barre latérale et Finder : déplacement dans le même disque, copie vers un autre (`Option` force la copie, `Cmd` le déplacement)
 - Recherche par nom dans le dossier et ses sous-dossiers (`Cmd+F`), sans tenir compte des accents ni des majuscules
 - Coup d'œil : `Espace` affiche un aperçu du fichier sélectionné
-- **Infos Git** : dans un dépôt, la barre d'état montre la branche, les commits à envoyer ou à recevoir et le nombre de fichiers changés ; une lettre de couleur marque les fichiers modifiés, ajoutés ou non suivis
+- **Infos Git** : dans un dépôt, la barre d'état montre la branche, les commits à envoyer ou à recevoir, le nombre de fichiers changés et le dernier commit ; un clic sur la branche permet d'en changer ; une lettre de couleur marque les fichiers modifiés, ajoutés ou non suivis
 - Menu contextuel au clic droit
 - Barre d'adresse : fil d'Ariane cliquable, ou chemin à saisir (`Cmd+L`)
 - Précédent, suivant, dossier parent

@@ -4,6 +4,15 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et les n
 
 ## [Non publié]
 
+## [0.14.0] - 2026-11-11
+
+Le dernier commit et le changement de branche.
+
+### Ajouté
+- La barre d'état affiche le dernier commit du dépôt : son identifiant court et la première ligne de son message. L'infobulle donne l'auteur et l'ancienneté.
+- Le nom de la branche est un menu : il liste les branches locales, coche la branche courante, et un clic en choisit une autre. Le sous-menu « Branches distantes » crée la branche locale qui suit une branche du serveur.
+- Si Git refuse le changement (des modifications seraient perdues, par exemple), son message est affiché et rien n'est changé. Si le dossier ouvert n'existe pas dans la nouvelle branche, la fenêtre remonte au dossier le plus proche.
+
 ## [0.13.0] - 2026-11-11
 
 Les infos Git.
