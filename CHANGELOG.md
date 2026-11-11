@@ -4,6 +4,17 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et les n
 
 ## [Non publié]
 
+## [0.7.0] - 2026-11-11
+
+Le glisser-déposer.
+
+### Ajouté
+- Les éléments de la liste se glissent vers un dossier de la liste, vers la liste elle-même (depuis une autre fenêtre ou un autre onglet), vers une ligne de la barre latérale (favori, volume, lecteur réseau connecté, dossier de l'arborescence) ou vers une autre application, le Finder compris.
+- Comme dans l'Explorateur : l'élément est déplacé dans le même disque et copié vers un autre. `Option` force la copie, `Cmd` force le déplacement.
+- Rien n'est écrasé : un nom déjà pris reçoit un numéro. Un dossier ne peut pas être déposé sur lui-même ni dans l'un de ses sous-dossiers.
+- Un dépôt s'annule avec `Cmd+Z`.
+- Les fichiers glissés depuis le Finder se déposent dans la liste et dans la barre latérale.
+
 ## [0.6.0] - 2026-11-10
 
 La vue « Ce Mac », l'équivalent de « Ce PC ».

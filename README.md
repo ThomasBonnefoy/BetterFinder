@@ -12,6 +12,7 @@ L'idée de départ : garder les **lecteurs réseau toujours visibles dans la bar
 - **Onglets**, avec la barre d'onglets de macOS : `Cmd+T`, « Ouvrir dans un nouvel onglet » au clic droit
 - Liste détaillée triable (nom, date de modification, type, taille), dossiers en premier
 - Couper, copier, coller, renommer, corbeille, nouveau dossier et nouveau document, avec annulation ; rien n'est jamais écrasé
+- Glisser-déposer entre dossiers, fenêtres, onglets, barre latérale et Finder : déplacement dans le même disque, copie vers un autre (`Option` force la copie, `Cmd` le déplacement)
 - Menu contextuel au clic droit
 - Barre d'adresse : fil d'Ariane cliquable, ou chemin à saisir (`Cmd+L`)
 - Précédent, suivant, dossier parent
