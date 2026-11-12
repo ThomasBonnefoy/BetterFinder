@@ -1,5 +1,5 @@
 #!/bin/bash
-# Builds BetterFinder and assembles dist/BetterFinder.app (ad hoc signed).
+# Builds BetterFinder and assembles dist/BetterFinder.app (signed with the local certificate, or ad hoc).
 # Usage: scripts/bundle.sh [release|debug] [output folder]
 # The output folder defaults to dist/. Building elsewhere leaves a running
 # copy of dist/BetterFinder.app untouched.
@@ -24,5 +24,13 @@ sed -e "s/__VERSION__/$VERSION/g" -e "s/__BUILD__/$BUILD/g" \
 printf '/* French is the only localization. */\n' \
     > "$APP/Contents/Resources/fr.lproj/InfoPlist.strings"
 
-codesign --force --sign - "$APP"
+# A stable identity keeps the privacy permissions (Full Disk Access...) valid
+# from one build to the next: macOS ties them to the signature, which changes
+# every time with an ad hoc one. "BetterFinder Local" is a self-signed code
+# signing certificate in the login keychain; without it, sign ad hoc.
+if security find-certificate -c "BetterFinder Local" >/dev/null 2>&1; then
+    codesign --force --sign "BetterFinder Local" "$APP"
+else
+    codesign --force --sign - "$APP"
+fi
 echo "Built $APP (version $VERSION, build $BUILD, $CONFIG)"
