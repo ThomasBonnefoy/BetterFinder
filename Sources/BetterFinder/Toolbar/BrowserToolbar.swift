@@ -1,56 +1,105 @@
 import BetterFinderCore
 import SwiftUI
 
-/// The toolbar of a browser window. It is customizable: a right-click on it,
-/// or "Personnaliser la barre d'outils…" in the Présentation menu, lets the
-/// user add, remove and reorder its buttons. macOS remembers the result.
+/// The toolbar of a browser window: the items of the user's layout, in
+/// their order.
 ///
-/// Each button has an identifier that must never change: it is what the
-/// saved layout refers to.
-struct BrowserToolbar: CustomizableToolbarContent {
+/// The layout is BetterFinder's own (`ToolbarLayoutStore`), edited in
+/// `ToolbarCustomizer`. It does not use the toolbar customization of macOS
+/// (`toolbar(id:)`): on macOS 26 it shuffles the saved layout at launch, at
+/// random, and can quit the app while doing so
+/// (`AppKitToolbarStrategy.applyItemCustomizations`). Replacing the window's
+/// toolbar with an AppKit one is not an option either: SwiftUI quits when
+/// the toolbar is not its own. Do not go back to either.
+struct BrowserToolbar: ToolbarContent {
+    @Bindable var model: BrowserModel
+    var store = ToolbarLayoutStore.shared
+
+    var body: some ToolbarContent {
+        ForEach(store.layout.items, id: \.self) { item in
+            ToolbarItem {
+                ToolbarItemView(item: item, model: model)
+                    .contextMenu {
+                        Button("Retirer de la barre d'outils") { store.remove(item) }
+                        Divider()
+                        Button("Personnaliser la barre d'outils…") { model.isCustomizingToolbar = true }
+                    }
+            }
+        }
+    }
+}
+
+/// Name and symbol of a toolbar item, for the toolbar and its customizer.
+enum ToolbarItemInfo {
+    static func title(of item: String) -> String {
+        switch item {
+        case "back": "Précédent"
+        case "forward": "Suivant"
+        case "up": "Dossier parent"
+        case "address": "Barre d'adresse"
+        case "viewMode": "Présentation"
+        case "reload": "Actualiser"
+        case "newTab": "Nouvel onglet"
+        case "newFile": "Nouveau fichier"
+        case "search": "Recherche"
+        case "hiddenFiles": "Fichiers masqués"
+        case "computer": BrowserModel.computerName
+        case "home": "Dossier personnel"
+        case "addFavorite": "Ajouter aux favoris"
+        case "reveal": "Afficher dans le Finder"
+        case "terminal": "Ouvrir dans le terminal"
+        case "newFolder": "Nouveau dossier"
+        case "cut": "Couper"
+        case "copy": "Copier"
+        case "paste": "Coller"
+        case "rename": "Renommer"
+        case "trash": "Mettre à la corbeille"
+        case "copyPath": "Copier le chemin"
+        default: item
+        }
+    }
+
+    static func symbol(of item: String) -> String {
+        switch item {
+        case "back": "chevron.left"
+        case "forward": "chevron.right"
+        case "up": "arrow.up"
+        case "address": "character.cursor.ibeam"
+        case "viewMode": "square.grid.2x2"
+        case "reload": "arrow.clockwise"
+        case "newTab": "plus"
+        case "newFile": "doc.badge.plus"
+        case "search": "magnifyingglass"
+        case "hiddenFiles": "eye"
+        case "computer": "desktopcomputer"
+        case "home": "house"
+        case "addFavorite": "star"
+        case "reveal": "macwindow"
+        case "terminal": "terminal"
+        case "newFolder": "folder.badge.plus"
+        case "cut": "scissors"
+        case "copy": "doc.on.doc"
+        case "paste": "doc.on.clipboard"
+        case "rename": "pencil"
+        case "trash": "trash"
+        case "copyPath": "link"
+        default: "questionmark"
+        }
+    }
+}
+
+/// One item of the toolbar.
+struct ToolbarItemView: View {
+    let item: String
     @Bindable var model: BrowserModel
 
-    /// Name the layout is saved under.
-    static let id = "BetterFinder.BrowserToolbar"
-
-    var body: some CustomizableToolbarContent {
-        navigation
-        ToolbarItem(id: "address", placement: .principal) {
+    var body: some View {
+        switch item {
+        case "address":
             AddressBar(model: model)
-        }
-        .customizationBehavior(.reorderable)
-        display
-        ToolbarItem(id: "search") {
+        case "search":
             SearchField(model: model)
-        }
-        places
-        fileActions
-    }
-
-    // MARK: Shown by default
-
-    @ToolbarContentBuilder
-    private var navigation: some CustomizableToolbarContent {
-        ToolbarItem(id: "back", placement: .navigation) {
-            Button("Précédent", systemImage: "chevron.left") { model.goBack() }
-                .disabled(!model.canGoBack)
-                .help("Dossier précédent")
-        }
-        ToolbarItem(id: "forward", placement: .navigation) {
-            Button("Suivant", systemImage: "chevron.right") { model.goForward() }
-                .disabled(!model.canGoForward)
-                .help("Dossier suivant")
-        }
-        ToolbarItem(id: "up", placement: .navigation) {
-            Button("Dossier parent", systemImage: "arrow.up") { model.goUp() }
-                .disabled(!model.canGoUp)
-                .help("Dossier parent")
-        }
-    }
-
-    @ToolbarContentBuilder
-    private var display: some CustomizableToolbarContent {
-        ToolbarItem(id: "viewMode") {
+        case "viewMode":
             Picker("Présentation", selection: $model.viewMode) {
                 ForEach(ViewMode.allCases, id: \.self) { mode in
                     Label(mode.title, systemImage: mode.symbol).tag(mode)
@@ -58,93 +107,16 @@ struct BrowserToolbar: CustomizableToolbarContent {
             }
             .pickerStyle(.segmented)
             .help("Mode d'affichage (Cmd+1, Cmd+2)")
-        }
-        ToolbarItem(id: "reload") {
-            Button("Actualiser", systemImage: "arrow.clockwise") { model.reload() }
-                .help("Actualiser")
-        }
-        // Always there, unlike the tab bar, which macOS hides while the
-        // window has a single tab.
-        ToolbarItem(id: "newTab") {
-            Button("Nouvel onglet", systemImage: "plus") { model.newTab() }
-                .help("Nouvel onglet")
-        }
-        ToolbarItem(id: "newFile") {
-            Button("Nouveau fichier", systemImage: "doc.badge.plus") { model.newTextFile() }
-                .disabled(!canCreate)
-                .help("Nouveau document texte")
-        }
-        ToolbarItem(id: "hiddenFiles", showsByDefault: false) {
+        case "hiddenFiles":
             Toggle("Fichiers masqués", systemImage: "eye", isOn: Binding(
                 get: { model.showHidden },
                 set: { model.setShowHidden($0) }
             ))
             .help("Afficher les fichiers masqués")
-        }
-    }
-
-    // MARK: Offered in the customization panel
-
-    @ToolbarContentBuilder
-    private var places: some CustomizableToolbarContent {
-        ToolbarItem(id: "computer", showsByDefault: false) {
-            Button(BrowserModel.computerName, systemImage: "desktopcomputer") { model.showComputer() }
-                .help(BrowserModel.computerName)
-        }
-        ToolbarItem(id: "home", showsByDefault: false) {
-            Button("Dossier personnel", systemImage: "house") { model.goHome() }
-                .help("Dossier personnel")
-        }
-        ToolbarItem(id: "addFavorite", showsByDefault: false) {
-            Button("Ajouter aux favoris", systemImage: "star") {
-                if let folder = model.currentURL { FavoriteStore.shared.add([folder]) }
-            }
-            .disabled(!canAddFavorite)
-            .help("Ajouter le dossier ouvert aux favoris")
-        }
-        ToolbarItem(id: "reveal", showsByDefault: false) {
-            Button("Afficher dans le Finder", systemImage: "macwindow") { model.revealSelectionInFinder() }
-                .disabled(model.currentURL == nil)
-                .help("Afficher dans le Finder")
-        }
-    }
-
-    @ToolbarContentBuilder
-    private var fileActions: some CustomizableToolbarContent {
-        ToolbarItem(id: "newFolder", showsByDefault: false) {
-            Button("Nouveau dossier", systemImage: "folder.badge.plus") { model.newFolder() }
-                .disabled(!canCreate)
-                .help("Nouveau dossier")
-        }
-        ToolbarItem(id: "cut", showsByDefault: false) {
-            Button("Couper", systemImage: "scissors") { model.cutSelection() }
-                .disabled(model.selection.isEmpty)
-                .help("Couper")
-        }
-        ToolbarItem(id: "copy", showsByDefault: false) {
-            Button("Copier", systemImage: "doc.on.doc") { model.copySelection() }
-                .disabled(model.selection.isEmpty)
-                .help("Copier")
-        }
-        ToolbarItem(id: "paste", showsByDefault: false) {
-            Button("Coller", systemImage: "doc.on.clipboard") { model.paste() }
-                .disabled(!model.canPaste)
-                .help("Coller")
-        }
-        ToolbarItem(id: "rename", showsByDefault: false) {
-            Button("Renommer", systemImage: "pencil") { model.renameSelection() }
-                .disabled(model.selection.count != 1)
-                .help("Renommer")
-        }
-        ToolbarItem(id: "trash", showsByDefault: false) {
-            Button("Mettre à la corbeille", systemImage: "trash") { model.trashSelection() }
-                .disabled(model.selection.isEmpty)
-                .help(model.isInTrash ? "Supprimer définitivement" : "Mettre à la corbeille")
-        }
-        ToolbarItem(id: "copyPath", showsByDefault: false) {
-            Button("Copier le chemin", systemImage: "link") { model.copyPathOfSelection() }
-                .disabled(model.selection.isEmpty)
-                .help("Copier le chemin d'accès")
+        default:
+            Button(ToolbarItemInfo.title(of: item), systemImage: ToolbarItemInfo.symbol(of: item)) { run() }
+                .disabled(!isEnabled)
+                .help(help)
         }
     }
 
@@ -152,8 +124,60 @@ struct BrowserToolbar: CustomizableToolbarContent {
         model.canDropIntoCurrentFolder && !model.isInTrash
     }
 
+    private var isEnabled: Bool {
+        switch item {
+        case "back": model.canGoBack
+        case "forward": model.canGoForward
+        case "up": model.canGoUp
+        case "newFile", "newFolder": canCreate
+        case "addFavorite": canAddFavorite
+        case "reveal": model.currentURL != nil
+        case "terminal": model.terminalFolder != nil
+        case "cut", "copy", "trash", "copyPath": !model.selection.isEmpty
+        case "paste": model.canPaste
+        case "rename": model.selection.count == 1
+        default: true
+        }
+    }
+
     private var canAddFavorite: Bool {
         guard let folder = model.currentURL, model.displayedDriveID == nil, !model.isInTrash else { return false }
         return !FavoriteStore.shared.contains(folder)
+    }
+
+    private var help: String {
+        switch item {
+        case "back": "Dossier précédent"
+        case "forward": "Dossier suivant"
+        case "newFile": "Nouveau document texte"
+        case "addFavorite": "Ajouter le dossier ouvert aux favoris"
+        case "trash": model.isInTrash ? "Supprimer définitivement" : "Mettre à la corbeille"
+        case "copyPath": "Copier le chemin d'accès"
+        default: ToolbarItemInfo.title(of: item)
+        }
+    }
+
+    private func run() {
+        switch item {
+        case "back": model.goBack()
+        case "forward": model.goForward()
+        case "up": model.goUp()
+        case "reload": model.reload()
+        case "newTab": model.newTab()
+        case "newFile": model.newTextFile()
+        case "computer": model.showComputer()
+        case "home": model.goHome()
+        case "addFavorite": if let folder = model.currentURL { FavoriteStore.shared.add([folder]) }
+        case "reveal": model.revealSelectionInFinder()
+        case "terminal": model.openInTerminal()
+        case "newFolder": model.newFolder()
+        case "cut": model.cutSelection()
+        case "copy": model.copySelection()
+        case "paste": model.paste()
+        case "rename": model.renameSelection()
+        case "trash": model.trashSelection()
+        case "copyPath": model.copyPathOfSelection()
+        default: break
+        }
     }
 }

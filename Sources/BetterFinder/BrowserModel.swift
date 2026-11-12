@@ -59,6 +59,8 @@ final class BrowserModel {
     private(set) var renameRequest: RenameRequest?
     /// An error to show to the user.
     var alert: OperationAlert?
+    /// True while the sheet that composes the toolbar is open.
+    var isCustomizingToolbar = false
     /// How the folder's content is drawn. Remembered between launches.
     var viewMode = ViewMode.saved {
         didSet {

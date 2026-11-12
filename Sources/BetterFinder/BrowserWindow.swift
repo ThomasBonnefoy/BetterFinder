@@ -24,7 +24,7 @@ struct BrowserWindow: View {
             }
             .navigationTitle(model.title)
             .toolbar(removing: .title)
-            .toolbar(id: BrowserToolbar.id) {
+            .toolbar {
                 BrowserToolbar(model: model)
             }
         }
@@ -97,6 +97,9 @@ struct BrowserWindow: View {
                 : confirmation.becauseNoTrash
                 ? "Ce lecteur n'a pas de corbeille. La suppression est immédiate et ne peut pas être annulée."
                 : "Cette action ne peut pas être annulée.")
+        }
+        .sheet(isPresented: $model.isCustomizingToolbar) {
+            ToolbarCustomizer()
         }
         .sheet(item: $model.driveEditor) { request in
             NavigationStack {

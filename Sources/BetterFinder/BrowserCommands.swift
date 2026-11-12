@@ -66,6 +66,9 @@ struct BrowserCommands: Commands {
                 .disabled(model == nil)
             Toggle("Développer jusqu'au dossier ouvert", isOn: $sidebarFollowsLocation)
             Divider()
+            Button("Personnaliser la barre d'outils…") { model?.isCustomizingToolbar = true }
+                .disabled(model == nil)
+            Divider()
         }
 
         CommandMenu("Aller") {
