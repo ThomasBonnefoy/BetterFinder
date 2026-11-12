@@ -4,6 +4,16 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et les n
 
 ## [Non publié]
 
+## [0.18.1] - 2026-11-12
+
+### Corrigé
+- L'app quittait au lancement ou à l'ouverture d'un dossier, dans la barre d'outils personnalisable de macOS, qui mélangeait aussi l'ordre des boutons d'un lancement à l'autre. BetterFinder gère maintenant lui-même le choix et l'ordre des boutons.
+
+### Modifié
+- « Personnaliser la barre d'outils… » (menu Présentation, ou clic droit sur un bouton) ouvre un panneau de BetterFinder : on y ajoute, retire et réordonne les boutons, par glisser ou avec les flèches ; « Rétablir par défaut » revient à l'ensemble d'origine. Un clic droit sur un bouton permet aussi de le retirer. La disposition est commune à toutes les fenêtres.
+- Nouveau bouton proposé : « Ouvrir dans le terminal ».
+- Les espaces libres et le choix « icônes et texte » de l'ancien panneau de macOS n'existent plus. L'ancienne disposition n'est pas reprise.
+
 ## [0.18.0] - 2026-11-12
 
 Ouvrir un dossier dans le terminal.
