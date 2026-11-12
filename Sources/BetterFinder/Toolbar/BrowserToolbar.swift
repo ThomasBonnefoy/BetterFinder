@@ -69,6 +69,11 @@ struct BrowserToolbar: CustomizableToolbarContent {
             Button("Nouvel onglet", systemImage: "plus") { model.newTab() }
                 .help("Nouvel onglet")
         }
+        ToolbarItem(id: "newFile") {
+            Button("Nouveau fichier", systemImage: "doc.badge.plus") { model.newTextFile() }
+                .disabled(!canCreate)
+                .help("Nouveau document texte")
+        }
         ToolbarItem(id: "hiddenFiles", showsByDefault: false) {
             Toggle("Fichiers masqués", systemImage: "eye", isOn: Binding(
                 get: { model.showHidden },
