@@ -96,6 +96,10 @@ Pour l'installer dans `/Applications` :
 scripts/install.sh
 ```
 
+## Garder les autorisations entre deux installations
+
+L'app n'a pas de signature de développeur Apple : signée « ad hoc », elle change de signature à chaque compilation et macOS oublie alors « Accès complet au disque ». `scripts/bundle.sh` utilise un certificat local nommé « BetterFinder Local » s'il est dans le trousseau de session, ce qui garde la signature stable. Pour le créer (une seule fois) : Trousseaux d'accès > Assistant de certification > Créer un certificat…, nom « BetterFinder Local », type « Signature de code ».
+
 ## Installer une version téléchargée
 
 L'app n'est pas signée par un compte développeur Apple. Après avoir décompressé l'archive d'une release, macOS refuse de l'ouvrir tant que la quarantaine n'est pas levée :

@@ -4,6 +4,11 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et les n
 
 ## [Non publié]
 
+## [0.18.2] - 2026-11-12
+
+### Corrigé
+- Après chaque installation, macOS refusait de nouveau l'accès aux dossiers protégés (Téléchargements, Documents, corbeille…) alors que « Accès complet au disque » était coché : la signature de l'app changeait à chaque version. `scripts/bundle.sh` signe maintenant avec le certificat local « BetterFinder Local » s'il existe dans le trousseau (la signature ne change plus), sinon en ad hoc comme avant. Il faut retirer puis remettre BetterFinder dans « Accès complet au disque » une dernière fois ; ensuite l'autorisation tient d'une version à l'autre.
+
 ## [0.18.1] - 2026-11-12
 
 ### Corrigé
