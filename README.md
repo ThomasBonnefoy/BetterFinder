@@ -22,7 +22,7 @@ L'idée de départ : garder les **lecteurs réseau toujours visibles dans la bar
 - Barre d'adresse : fil d'Ariane cliquable, ou chemin à saisir (`Cmd+L`)
 - Précédent, suivant, dossier parent
 - Raccourcis de l'Explorateur Windows adaptés au Mac
-- **Barre d'outils personnalisable** : clic droit sur la barre pour choisir ses boutons et leur ordre
+- **Barre d'outils personnalisable** : clic droit sur la barre pour choisir ses boutons et leur ordre ; un bouton « Nouveau fichier » crée un document texte en un clic
 - Réglages (`Cmd+,`) : page d'ouverture, présentation, fichiers masqués, infos Git
 
 La suite est décrite dans le [journal des modifications](CHANGELOG.md).

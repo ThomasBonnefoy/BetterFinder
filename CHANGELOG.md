@@ -4,6 +4,11 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et les n
 
 ## [Non publié]
 
+## [0.17.0] - 2026-11-12
+
+### Ajouté
+- Un bouton « Nouveau fichier » dans la barre d'outils, à côté du « + » des onglets : il crée un document texte dans le dossier ouvert et passe tout de suite en renommage. Il est grisé là où l'on ne peut rien créer (corbeille, « Ce Mac », lecteur hors ligne).
+
 ## [0.16.0] - 2026-11-11
 
 La barre d'outils personnalisable.
