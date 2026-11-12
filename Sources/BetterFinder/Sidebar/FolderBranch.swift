@@ -58,6 +58,7 @@ struct FolderRow: View {
             .contextMenu {
                 Button("Ouvrir") { model.navigate(to: folder.url) }
                 Button("Ouvrir dans un nouvel onglet") { model.openInNewTab(folder.url) }
+                Button("Ouvrir dans le terminal") { model.openInTerminal(folder.url) }
                 Divider()
                 if FavoriteStore.shared.contains(folder.url) {
                     Button("Retirer des favoris") { FavoriteStore.shared.remove(folder.url) }

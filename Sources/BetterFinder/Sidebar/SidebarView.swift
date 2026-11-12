@@ -161,6 +161,7 @@ struct SidebarView: View {
         if case .mounted(let folder) = status {
             Button("Ouvrir") { model.openDrive(drive.id) }
             Button("Ouvrir dans un nouvel onglet") { model.openInNewTab(folder) }
+            Button("Ouvrir dans le terminal") { model.openInTerminal(folder) }
             favoriteToggle(for: BrowserModel.normalized(folder))
         } else {
             Button("Connecter") { model.openDrive(drive.id) }
@@ -192,6 +193,7 @@ struct SidebarView: View {
     private func placeMenu(for url: URL) -> some View {
         Button("Ouvrir") { model.navigate(to: url) }
         Button("Ouvrir dans un nouvel onglet") { model.openInNewTab(url) }
+        Button("Ouvrir dans le terminal") { model.openInTerminal(url) }
         Divider()
         favoriteToggle(for: url)
     }
@@ -203,6 +205,7 @@ struct SidebarView: View {
     private func favoriteMenu(for url: URL) -> some View {
         Button("Ouvrir") { model.navigate(to: url) }
         Button("Ouvrir dans un nouvel onglet") { model.openInNewTab(url) }
+        Button("Ouvrir dans le terminal") { model.openInTerminal(url) }
         Divider()
         Button("Monter") { favoriteStore.moveUp(url) }
             .disabled(!favoriteStore.list.canMoveUp(url))

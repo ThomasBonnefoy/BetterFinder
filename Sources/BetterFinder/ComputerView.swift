@@ -193,6 +193,9 @@ struct ComputerView: View {
     @ViewBuilder
     private func placeMenu(for url: URL) -> some View {
         Button("Ouvrir dans un nouvel onglet") { model.openInNewTab(url) }
+        if url != model.trashURL {
+            Button("Ouvrir dans le terminal") { model.openInTerminal(url) }
+        }
         Divider()
         Button("Copier le chemin d'accès") { model.clipboard.copyText(url.path) }
         Button("Afficher dans le Finder") { NSWorkspace.shared.activateFileViewerSelecting([url]) }
@@ -202,6 +205,7 @@ struct ComputerView: View {
     private func driveMenu(for drive: NetworkDrive, status: DriveStatus) -> some View {
         if case .mounted(let folder) = status {
             Button("Ouvrir dans un nouvel onglet") { model.openInNewTab(folder) }
+            Button("Ouvrir dans le terminal") { model.openInTerminal(folder) }
             Button("Déconnecter") {
                 Task { await driveMonitor.disconnect(drive.id) }
             }

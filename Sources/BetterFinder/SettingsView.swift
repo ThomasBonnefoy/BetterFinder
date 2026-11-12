@@ -31,6 +31,7 @@ struct SettingsView: View {
     @AppStorage(ViewMode.defaultsKey) private var viewMode = ViewMode.details.rawValue
     @AppStorage(SidebarSettings.followsLocationKey) private var sidebarFollowsLocation = false
     @AppStorage(AppSettings.showsGitInfoKey) private var showsGitInfo = true
+    @AppStorage(TerminalLauncher.preferenceKey) private var terminal = ""
 
     var body: some View {
         Form {
@@ -54,9 +55,29 @@ struct SettingsView: View {
             Section("Git") {
                 Toggle("Afficher la branche et l'état des fichiers dans les dépôts Git", isOn: $showsGitInfo)
             }
+            Section("Terminal") {
+                Picker("Ouvrir les dossiers dans", selection: $terminal) {
+                    Text(automaticTerminalTitle).tag("")
+                    ForEach(installedTerminals) { app in
+                        Text(app.name).tag(app.bundleID)
+                    }
+                }
+            }
         }
         .formStyle(.grouped)
         .frame(width: 460)
         .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+extension SettingsView {
+    private var installedTerminals: [TerminalApp] {
+        TerminalLauncher.live.installed
+    }
+
+    /// "Automatique (Ghostty)": says which terminal the automatic choice picks.
+    private var automaticTerminalTitle: String {
+        guard let first = installedTerminals.first else { return "Automatique" }
+        return "Automatique (\(first.name))"
     }
 }

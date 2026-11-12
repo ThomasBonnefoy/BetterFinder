@@ -635,6 +635,38 @@ final class BrowserModel {
         }
     }
 
+    // MARK: - Terminal
+
+    /// Opens folders in the user's terminal. A property so that tests can
+    /// replace it.
+    @ObservationIgnored var terminal = TerminalLauncher.live
+
+    /// The folder shown, when a terminal can be opened in it: not on the
+    /// computer's overview, a drive's page or in the Trash (macOS keeps
+    /// its content out of reach).
+    var terminalFolderHere: URL? {
+        guard let folder = operationFolder, !isInTrash else { return nil }
+        return folder
+    }
+
+    /// The folder "Ouvrir dans le terminal" acts on: the single selected
+    /// folder, otherwise the folder shown.
+    var terminalFolder: URL? {
+        let selected = selectedItems
+        if selected.count == 1, selected[0].isBrowsable, !isInTrash {
+            return selected[0].url
+        }
+        return selected.isEmpty ? terminalFolderHere : nil
+    }
+
+    /// Opens a terminal window in `folder`, or in `terminalFolder`.
+    func openInTerminal(_ folder: URL? = nil) {
+        guard let folder = folder ?? terminalFolder else { return }
+        terminal.open(folder) { [weak self] message in
+            self?.alert = OperationAlert(title: "Impossible d'ouvrir le terminal", message: message)
+        }
+    }
+
     /// Runs an operation in the background and makes it undoable.
     ///
     /// The undo entry is registered right away, while the operation is still

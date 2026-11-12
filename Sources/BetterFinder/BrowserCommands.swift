@@ -18,6 +18,10 @@ struct BrowserCommands: Commands {
             Button("Nouveau document texte") { model?.newTextFile() }
                 .disabled(model == nil)
             Divider()
+            Button("Ouvrir dans le terminal") { model?.openInTerminal() }
+                .keyboardShortcut("t", modifiers: [.command, .option])
+                .disabled(model?.terminalFolder == nil)
+            Divider()
             Button("Vider la corbeille…") { model?.askToEmptyTrash() }
                 .disabled(model == nil)
             Divider()

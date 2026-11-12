@@ -52,6 +52,9 @@ final class FileContextMenu: NSObject, NSMenuDelegate {
         if model.canOpenSelectionInNewTabs {
             menu.addItem(item("Ouvrir dans un nouvel onglet", #selector(menuOpenInNewTab)))
         }
+        if selectionCount == 1, model.terminalFolder != nil {
+            menu.addItem(item("Ouvrir dans le terminal", #selector(menuOpenInTerminal)))
+        }
         menu.addItem(.separator())
         menu.addItem(item("Couper", #selector(menuCut)))
         menu.addItem(item("Copier", #selector(menuCopy)))
@@ -95,6 +98,7 @@ final class FileContextMenu: NSObject, NSMenuDelegate {
         menu.addItem(item("Coller", #selector(menuPaste), enabled: model.canPaste))
         menu.addItem(.separator())
         menu.addItem(item("Actualiser", #selector(menuReload)))
+        menu.addItem(item("Ouvrir dans le terminal", #selector(menuOpenFolderInTerminal), enabled: model.terminalFolderHere != nil))
         menu.addItem(item("Afficher dans le Finder", #selector(menuReveal)))
     }
 
@@ -121,5 +125,7 @@ final class FileContextMenu: NSObject, NSMenuDelegate {
     @objc private func menuNewFolder() { model.newFolder() }
     @objc private func menuNewTextFile() { model.newTextFile() }
     @objc private func menuReload() { model.reload() }
+    @objc private func menuOpenInTerminal() { model.openInTerminal() }
+    @objc private func menuOpenFolderInTerminal() { model.openInTerminal(model.terminalFolderHere) }
     @objc private func menuRename() { rename() }
 }
