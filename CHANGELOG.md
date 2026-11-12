@@ -4,6 +4,15 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et les n
 
 ## [Non publié]
 
+## [0.18.0] - 2026-11-12
+
+Ouvrir un dossier dans le terminal.
+
+### Ajouté
+- « Ouvrir dans le terminal » au clic droit : sur le vide de la liste (le dossier ouvert), sur un dossier de la liste, sur les favoris, les emplacements, les dossiers de l'arborescence, les lecteurs réseau connectés et les tuiles de « Ce Mac ». Aussi dans le menu Fichier, avec `Cmd+Option+T` (dossier sélectionné, sinon dossier ouvert).
+- Réglage « Terminal » (`Cmd+,`) : Automatique prend le premier installé parmi Ghostty, iTerm, Warp et Terminal ; on peut en imposer un.
+- Rien n'est proposé dans la corbeille, sur « Ce Mac » ou sur un lecteur hors ligne.
+
 ## [0.17.0] - 2026-11-12
 
 ### Ajouté
