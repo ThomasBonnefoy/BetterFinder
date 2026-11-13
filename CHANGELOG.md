@@ -4,6 +4,14 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et les n
 
 ## [Non publié]
 
+## [0.22.0] - 2026-11-13
+
+Compresser en zip.
+
+### Ajouté
+- « Compresser » au clic droit et dans le menu Fichier : les éléments sélectionnés sont rangés dans une archive zip à côté d'eux (« photo.png.zip » pour un seul, « Archive.zip » pour plusieurs, comme le Finder), puis l'archive est sélectionnée. Rien n'est jamais écrasé : un nom pris reçoit un numéro. `Cmd+Z` met l'archive à la corbeille.
+- L'archive ne contient que les éléments, sans dossier `__MACOSX` : elle s'ouvre proprement sous Windows. Les éléments doivent être dans le même dossier (ce qui n'est pas toujours le cas dans des résultats de recherche : l'entrée est alors grisée). Pas dans la corbeille.
+
 ## [0.21.0] - 2026-11-13
 
 Les propriétés d'un élément, avec la vraie taille d'un dossier.
