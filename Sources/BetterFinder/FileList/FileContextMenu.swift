@@ -77,6 +77,8 @@ final class FileContextMenu: NSObject, NSMenuDelegate {
             menu.addItem(item("Ouvrir l'emplacement du dossier", #selector(menuShowInFolder), enabled: selectionCount == 1))
         }
         menu.addItem(item("Afficher dans le Finder", #selector(menuReveal)))
+        menu.addItem(.separator())
+        menu.addItem(item("Propriétés", #selector(menuProperties)))
     }
 
     private func buildFolderMenu(_ menu: NSMenu) {
@@ -103,6 +105,8 @@ final class FileContextMenu: NSObject, NSMenuDelegate {
         menu.addItem(item("Actualiser", #selector(menuReload)))
         menu.addItem(item("Ouvrir dans le terminal", #selector(menuOpenFolderInTerminal), enabled: model.terminalFolderHere != nil))
         menu.addItem(item("Afficher dans le Finder", #selector(menuReveal)))
+        menu.addItem(.separator())
+        menu.addItem(item("Propriétés", #selector(menuProperties)))
     }
 
     /// "Ouvrir avec" and its submenu: the applications that can open the
@@ -143,6 +147,7 @@ final class FileContextMenu: NSObject, NSMenuDelegate {
         model.openSelection(with: app)
     }
     @objc private func menuOpenWithOther() { model.chooseApplicationToOpenSelection() }
+    @objc private func menuProperties() { model.showProperties() }
     @objc private func menuQuickLook() { quickLook() }
     @objc private func menuOpenInNewTab() { model.openSelectionInNewTabs() }
     @objc private func menuCut() { model.cutSelection() }

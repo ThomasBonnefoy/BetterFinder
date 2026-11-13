@@ -83,6 +83,11 @@ enum FileListKeys {
             case KeyCode.upArrow:
                 model.goUp()
                 return true
+            case KeyCode.return, KeyCode.keypadEnter:
+                // Alt+Enter in Explorer.
+                guard hasSelection else { return false }
+                model.showProperties()
+                return true
             default:
                 return false
             }

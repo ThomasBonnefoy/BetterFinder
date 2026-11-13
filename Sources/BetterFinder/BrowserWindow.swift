@@ -98,6 +98,9 @@ struct BrowserWindow: View {
                 ? "Ce lecteur n'a pas de corbeille. La suppression est immédiate et ne peut pas être annulée."
                 : "Cette action ne peut pas être annulée.")
         }
+        .sheet(item: $model.propertiesRequest) { request in
+            PropertiesView(request: request) { model.propertiesRequest = nil }
+        }
         .sheet(isPresented: $model.isCustomizingToolbar) {
             ToolbarCustomizer()
         }

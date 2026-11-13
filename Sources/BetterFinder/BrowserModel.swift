@@ -444,6 +444,25 @@ final class BrowserModel {
         open(selectedItems)
     }
 
+    // MARK: - Properties
+
+    /// Set to show the Properties sheet.
+    var propertiesRequest: PropertiesRequest?
+
+    /// What "Propriétés" describes: the selection, otherwise the folder
+    /// shown.
+    var propertiesTargets: [URL] {
+        let selected = selectedItems.map(\.url)
+        if !selected.isEmpty { return selected }
+        return currentURL.map { [$0] } ?? []
+    }
+
+    func showProperties() {
+        let urls = propertiesTargets
+        guard !urls.isEmpty, displayedDriveID == nil, !isOnComputer else { return }
+        propertiesRequest = PropertiesRequest(urls: urls)
+    }
+
     // MARK: - Open with
 
     /// Finds applications and opens files with one. A property so that tests
