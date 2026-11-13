@@ -61,6 +61,15 @@ final class BrowserModel {
     var alert: OperationAlert?
     /// True while the sheet that composes the toolbar is open.
     var isCustomizingToolbar = false
+    /// True while the preview pane is shown at the right of the list.
+    /// Remembered between launches.
+    var showsPreviewPane = AppSettings.showsPreviewPane {
+        didSet {
+            if showsPreviewPane != oldValue {
+                UserDefaults.standard.set(showsPreviewPane, forKey: AppSettings.showsPreviewPaneKey)
+            }
+        }
+    }
     /// False when the extensions of file names are hidden in the lists.
     /// Remembered between launches.
     var showsExtensions = AppSettings.showsExtensions {

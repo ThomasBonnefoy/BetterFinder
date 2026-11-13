@@ -55,6 +55,9 @@ enum ToolbarItemInfo {
         case "rename": "Renommer"
         case "trash": "Mettre à la corbeille"
         case "copyPath": "Copier le chemin"
+        case "compress": "Compresser"
+        case "properties": "Propriétés"
+        case "previewPane": "Panneau d'aperçu"
         default: item
         }
     }
@@ -83,6 +86,9 @@ enum ToolbarItemInfo {
         case "rename": "pencil"
         case "trash": "trash"
         case "copyPath": "link"
+        case "compress": "doc.zipper"
+        case "properties": "info.circle"
+        case "previewPane": "sidebar.right"
         default: "questionmark"
         }
     }
@@ -113,6 +119,9 @@ struct ToolbarItemView: View {
                 set: { model.setShowHidden($0) }
             ))
             .help("Afficher les fichiers masqués")
+        case "previewPane":
+            Toggle("Panneau d'aperçu", systemImage: "sidebar.right", isOn: $model.showsPreviewPane)
+                .help("Afficher le panneau d'aperçu (Option+P)")
         default:
             Button(ToolbarItemInfo.title(of: item), systemImage: ToolbarItemInfo.symbol(of: item)) { run() }
                 .disabled(!isEnabled)
@@ -135,7 +144,9 @@ struct ToolbarItemView: View {
         case "terminal": model.terminalFolder != nil
         case "cut", "copy", "trash", "copyPath": !model.selection.isEmpty
         case "paste": model.canPaste
-        case "rename": model.selection.count == 1
+        case "rename": !model.selection.isEmpty
+        case "compress": model.canCompressSelection
+        case "properties": model.displayedDriveID == nil && !model.isOnComputer
         default: true
         }
     }
@@ -177,6 +188,8 @@ struct ToolbarItemView: View {
         case "rename": model.renameSelection()
         case "trash": model.trashSelection()
         case "copyPath": model.copyPathOfSelection()
+        case "compress": model.compressSelection()
+        case "properties": model.showProperties()
         default: break
         }
     }

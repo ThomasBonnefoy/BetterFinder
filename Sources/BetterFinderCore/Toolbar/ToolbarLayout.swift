@@ -15,6 +15,7 @@ public struct ToolbarLayout: Equatable, Sendable {
         "back", "forward", "up", "address", "viewMode", "reload", "newTab", "newFile", "search",
         "hiddenFiles", "computer", "home", "addFavorite", "reveal", "terminal",
         "newFolder", "cut", "copy", "paste", "rename", "trash", "copyPath",
+        "compress", "properties", "previewPane",
     ]
 
     /// What a new user sees.

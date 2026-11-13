@@ -57,6 +57,15 @@ struct StatusBar: View {
         (url.deletingLastPathComponent().path as NSString).abbreviatingWithTildeInPath
     }
 
+    /// The total size of a selection, when all of it is files; otherwise a
+    /// reminder that folder sizes are in the Properties.
+    static func selectionDetail(_ selected: [FileItem]) -> String {
+        guard selected.allSatisfy({ $0.size != nil }) else {
+            return "Les tailles de dossiers s'affichent dans les propriétés."
+        }
+        return "Taille totale : " + FileFormat.size(selected.reduce(Int64(0)) { $0 + ($1.size ?? 0) })
+    }
+
     static func selectionText(_ selected: [FileItem]) -> String {
         var text = selected.count > 1
             ? "\(selected.count) éléments sélectionnés"

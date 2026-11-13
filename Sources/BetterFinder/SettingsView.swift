@@ -8,6 +8,13 @@ enum AppSettings {
     /// Whether hidden files are shown in new windows.
     static let showsHiddenFilesKey = "ShowsHiddenFiles"
 
+    /// Whether the preview pane is open in new windows.
+    static let showsPreviewPaneKey = "ShowsPreviewPane"
+
+    static var showsPreviewPane: Bool {
+        UserDefaults.standard.bool(forKey: showsPreviewPaneKey)
+    }
+
     /// Whether the extensions of file names are shown ("a.txt") or hidden ("a").
     static let showsExtensionsKey = "ShowsExtensions"
 
@@ -36,6 +43,7 @@ struct SettingsView: View {
     @AppStorage(AppSettings.opensOnComputerKey) private var opensOnComputer = true
     @AppStorage(AppSettings.showsHiddenFilesKey) private var showsHiddenFiles = false
     @AppStorage(AppSettings.showsExtensionsKey) private var showsExtensions = true
+    @AppStorage(AppSettings.showsPreviewPaneKey) private var showsPreviewPane = false
     @AppStorage(ViewMode.defaultsKey) private var viewMode = ViewMode.details.rawValue
     @AppStorage(SidebarSettings.followsLocationKey) private var sidebarFollowsLocation = false
     @AppStorage(AppSettings.showsGitInfoKey) private var showsGitInfo = true
@@ -57,6 +65,7 @@ struct SettingsView: View {
                 }
                 Toggle("Afficher les fichiers masqués dans les nouvelles fenêtres", isOn: $showsHiddenFiles)
                 Toggle("Afficher les extensions de nom de fichier dans les nouvelles fenêtres", isOn: $showsExtensions)
+                Toggle("Ouvrir le panneau d'aperçu dans les nouvelles fenêtres", isOn: $showsPreviewPane)
             }
             Section("Barre latérale") {
                 Toggle("Développer jusqu'au dossier ouvert", isOn: $sidebarFollowsLocation)
