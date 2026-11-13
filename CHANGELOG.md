@@ -4,6 +4,14 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et les n
 
 ## [Non publié]
 
+## [0.26.0] - 2026-11-13
+
+Des espaces dans la barre d'outils.
+
+### Ajouté
+- Le panneau « Personnaliser la barre d'outils… » a une section « Espaces » : « Espace » (un petit vide qui scinde les boutons en groupes) et « Espace flexible » (prend toute la place libre et pousse ce qui suit vers le bord droit). On en ajoute autant qu'on veut ; chacun se déplace, se retire et se range comme un bouton. Ce sont les espaces de la barre d'outils de macOS 26, que la v0.18.1 avait fait perdre.
+- Ta disposition actuelle n'est pas modifiée ; « Rétablir par défaut » retire les espaces.
+
 ## [0.25.0] - 2026-11-13
 
 Le panneau d'aperçu et de détails.
