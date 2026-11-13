@@ -8,6 +8,13 @@ enum AppSettings {
     /// Whether hidden files are shown in new windows.
     static let showsHiddenFilesKey = "ShowsHiddenFiles"
 
+    /// Whether the extensions of file names are shown ("a.txt") or hidden ("a").
+    static let showsExtensionsKey = "ShowsExtensions"
+
+    static var showsExtensions: Bool {
+        UserDefaults.standard.object(forKey: showsExtensionsKey) as? Bool ?? true
+    }
+
     /// Whether the branch and the changed files of Git repositories are shown.
     static let showsGitInfoKey = "ShowsGitInfo"
 
@@ -28,6 +35,7 @@ enum AppSettings {
 struct SettingsView: View {
     @AppStorage(AppSettings.opensOnComputerKey) private var opensOnComputer = true
     @AppStorage(AppSettings.showsHiddenFilesKey) private var showsHiddenFiles = false
+    @AppStorage(AppSettings.showsExtensionsKey) private var showsExtensions = true
     @AppStorage(ViewMode.defaultsKey) private var viewMode = ViewMode.details.rawValue
     @AppStorage(SidebarSettings.followsLocationKey) private var sidebarFollowsLocation = false
     @AppStorage(AppSettings.showsGitInfoKey) private var showsGitInfo = true
@@ -48,6 +56,7 @@ struct SettingsView: View {
                     }
                 }
                 Toggle("Afficher les fichiers masqués dans les nouvelles fenêtres", isOn: $showsHiddenFiles)
+                Toggle("Afficher les extensions de nom de fichier dans les nouvelles fenêtres", isOn: $showsExtensions)
             }
             Section("Barre latérale") {
                 Toggle("Développer jusqu'au dossier ouvert", isOn: $sidebarFollowsLocation)

@@ -64,6 +64,8 @@ struct BrowserCommands: Commands {
             Toggle("Afficher les fichiers masqués", isOn: showHidden)
                 .keyboardShortcut(".", modifiers: [.command, .shift])
                 .disabled(model == nil)
+            Toggle("Afficher les extensions de nom de fichier", isOn: showsExtensions)
+                .disabled(model == nil)
             Toggle("Développer jusqu'au dossier ouvert", isOn: $sidebarFollowsLocation)
             Divider()
             Button("Personnaliser la barre d'outils…") { model?.isCustomizingToolbar = true }
@@ -113,6 +115,13 @@ struct BrowserCommands: Commands {
         case .kind: "Type"
         case .size: "Taille"
         }
+    }
+
+    private var showsExtensions: Binding<Bool> {
+        Binding(
+            get: { model?.showsExtensions ?? true },
+            set: { model?.showsExtensions = $0 }
+        )
     }
 
     private var showHidden: Binding<Bool> {

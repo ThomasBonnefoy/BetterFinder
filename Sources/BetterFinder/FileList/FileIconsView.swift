@@ -195,10 +195,10 @@ final class FileIconItem: NSCollectionViewItem {
     var nameField: NSTextField { label }
 
     @MainActor
-    func configure(with item: FileItem, isLocalVolume: Bool, isCut: Bool, gitState: GitFileState? = nil) {
+    func configure(with item: FileItem, isLocalVolume: Bool, isCut: Bool, gitState: GitFileState? = nil, showsExtension: Bool = true) {
         badge.show(gitState, isFolder: item.isBrowsable)
         icon.image = FileIcon.image(for: item, isLocalVolume: isLocalVolume)
-        label.stringValue = item.name
+        label.stringValue = item.displayName(showsExtension: showsExtension)
         let alpha: CGFloat = isCut ? 0.45 : 1
         icon.alphaValue = alpha
         label.alphaValue = alpha
@@ -269,6 +269,7 @@ final class FileIconsCoordinator: NSObject, NSCollectionViewDataSource, NSCollec
     private var isLocalVolume = true
     private var cutURLs: Set<URL> = []
     private var gitStates: [String: GitFileState] = [:]
+    private var showsExtensions = true
     private var focusRequests = 0
     private var hasAppliedFirstState = false
     private var handledRenameRequest: Int?
@@ -316,10 +317,11 @@ final class FileIconsCoordinator: NSObject, NSCollectionViewDataSource, NSCollec
         let folderChanged = state.folder != folder
         folder = state.folder
         if state.items != items || state.cutURLs != cutURLs || state.isLocalVolume != isLocalVolume
-            || state.gitStates != gitStates {
+            || state.gitStates != gitStates || state.showsExtensions != showsExtensions {
             items = state.items
             cutURLs = state.cutURLs
             gitStates = state.gitStates
+            showsExtensions = state.showsExtensions
             isLocalVolume = state.isLocalVolume
             collection.reloadData()
         }
@@ -377,7 +379,8 @@ final class FileIconsCoordinator: NSObject, NSCollectionViewDataSource, NSCollec
             with: item,
             isLocalVolume: isLocalVolume,
             isCut: cutURLs.contains(item.url),
-            gitState: gitStates[item.url.path]
+            gitState: gitStates[item.url.path],
+            showsExtension: showsExtensions
         )
         cell.onOpen = { [weak self] in
             guard let self else { return }
@@ -517,7 +520,8 @@ final class FileIconsCoordinator: NSObject, NSCollectionViewDataSource, NSCollec
         let item = items[row]
         // Folders are listed under their localized name: what is edited is
         // the real name on disk.
-        let name = item.url.lastPathComponent
+        let realName = item.url.lastPathComponent
+        let name = FileNaming.displayName(realName, isDirectory: item.isBrowsable, showsExtension: showsExtensions)
         renamingURL = item.url
         cell.beginEditing(name: name)
         let field = cell.nameField
@@ -526,7 +530,8 @@ final class FileIconsCoordinator: NSObject, NSCollectionViewDataSource, NSCollec
             finishRename(field)
             return
         }
-        let base = FileNaming.split(name, isDirectory: item.isDirectory).base
+        // Like Explorer: select the name, leave the extension alone.
+        let base = showsExtensions ? FileNaming.split(name, isDirectory: item.isBrowsable).base : name
         field.currentEditor()?.selectedRange = NSRange(location: 0, length: (base as NSString).length)
     }
 
@@ -546,13 +551,17 @@ final class FileIconsCoordinator: NSObject, NSCollectionViewDataSource, NSCollec
 
     func controlTextDidEndEditing(_ notification: Notification) {
         guard let field = notification.object as? NSTextField, let url = renamingURL else { return }
-        let newName = field.stringValue
+        let typed = field.stringValue
         let movement = notification.userInfo?["NSTextMovement"] as? Int
         finishRename(field)
         if movement == NSTextMovement.return.rawValue {
             collection?.window?.makeFirstResponder(collection)
         }
-        model.rename(url, to: newName)
+        let original = url.lastPathComponent
+        let isFolder = items.first { $0.url == url }?.isBrowsable ?? false
+        model.rename(url, to: FileNaming.renamedName(
+            typed: typed, original: original, isDirectory: isFolder, showsExtension: showsExtensions
+        ))
     }
 
     func control(_ control: NSControl, textView: NSTextView, doCommandBy selector: Selector) -> Bool {

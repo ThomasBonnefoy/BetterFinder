@@ -61,6 +61,15 @@ final class BrowserModel {
     var alert: OperationAlert?
     /// True while the sheet that composes the toolbar is open.
     var isCustomizingToolbar = false
+    /// False when the extensions of file names are hidden in the lists.
+    /// Remembered between launches.
+    var showsExtensions = AppSettings.showsExtensions {
+        didSet {
+            if showsExtensions != oldValue {
+                UserDefaults.standard.set(showsExtensions, forKey: AppSettings.showsExtensionsKey)
+            }
+        }
+    }
     /// How the folder's content is drawn. Remembered between launches.
     var viewMode = ViewMode.saved {
         didSet {

@@ -60,3 +60,34 @@ import Testing
         #expect(directory.lastPathComponent == "Photos - Copie")
     }
 }
+
+@Suite struct FileNamingExtensionTests {
+    @Test func hidingExtensionsCutsOnlyTheLastOne() {
+        #expect(FileNaming.displayName("photo.final.png", isDirectory: false, showsExtension: false) == "photo.final")
+        #expect(FileNaming.displayName("photo.final.png", isDirectory: false, showsExtension: true) == "photo.final.png")
+    }
+
+    @Test func foldersDotFilesAndNamesWithoutExtensionAreKept() {
+        #expect(FileNaming.displayName("v1.2", isDirectory: true, showsExtension: false) == "v1.2")
+        #expect(FileNaming.displayName(".gitignore", isDirectory: false, showsExtension: false) == ".gitignore")
+        #expect(FileNaming.displayName("Makefile", isDirectory: false, showsExtension: false) == "Makefile")
+    }
+
+    @Test func renamingWithHiddenExtensionPutsTheExtensionBack() {
+        let name = FileNaming.renamedName(typed: "holiday", original: "photo.png", isDirectory: false, showsExtension: false)
+        #expect(name == "holiday.png")
+    }
+
+    @Test func renamingWithVisibleExtensionKeepsWhatWasTyped() {
+        let name = FileNaming.renamedName(typed: "holiday.jpg", original: "photo.png", isDirectory: false, showsExtension: true)
+        #expect(name == "holiday.jpg")
+    }
+
+    @Test func anEmptyNameStaysEmptySoThatItIsRejected() {
+        #expect(FileNaming.renamedName(typed: "", original: "photo.png", isDirectory: false, showsExtension: false) == "")
+    }
+
+    @Test func renamingAFolderNeverAddsAnExtension() {
+        #expect(FileNaming.renamedName(typed: "New", original: "v1.2", isDirectory: true, showsExtension: false) == "New")
+    }
+}

@@ -66,7 +66,7 @@ final class FileCellView: NSTableCellView {
         fatalError("init(coder:) is not supported")
     }
 
-    func configure(with item: FileItem, isLocalVolume: Bool, isCut: Bool, gitState: GitFileState? = nil) {
+    func configure(with item: FileItem, isLocalVolume: Bool, isCut: Bool, gitState: GitFileState? = nil, showsExtension: Bool = true) {
         badge?.show(gitState, isFolder: item.isBrowsable)
         // Cut items are shown faded until they are pasted, as in Explorer.
         let alpha: CGFloat = isCut ? 0.45 : 1
@@ -74,7 +74,7 @@ final class FileCellView: NSTableCellView {
         imageView?.alphaValue = alpha
         switch column {
         case .name:
-            textField?.stringValue = item.name
+            textField?.stringValue = item.displayName(showsExtension: showsExtension)
             imageView?.image = FileIcon.image(for: item, isLocalVolume: isLocalVolume)
         case .dateModified:
             textField?.stringValue = item.modificationDate.map(FileFormat.date) ?? ""

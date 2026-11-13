@@ -21,6 +21,13 @@ public struct FileItem: Identifiable, Hashable, Sendable {
     /// True when double-clicking the item should show its content in the list.
     public var isBrowsable: Bool { isDirectory && !isPackage }
 
+    /// The name as shown in a list, with or without the extension.
+    public func displayName(showsExtension: Bool) -> String {
+        // Folders are listed under their localized name, which has no
+        // extension to cut; an app bundle is a folder with one.
+        FileNaming.displayName(name, isDirectory: isBrowsable, showsExtension: showsExtension)
+    }
+
     public init(
         url: URL,
         name: String,

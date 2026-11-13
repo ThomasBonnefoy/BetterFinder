@@ -25,7 +25,8 @@ struct FileListView: View {
             focusRequests: model.listFocusRequests,
             cutURLs: model.clipboard.cutURLs,
             renameRequest: model.renameRequest,
-            gitStates: model.gitInfo?.states ?? [:]
+            gitStates: model.gitInfo?.states ?? [:],
+            showsExtensions: model.showsExtensions
         )
         return Group {
             switch model.viewMode {

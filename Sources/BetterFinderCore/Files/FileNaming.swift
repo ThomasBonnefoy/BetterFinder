@@ -28,6 +28,27 @@ public enum FileNaming {
         return ((name as NSString).deletingPathExtension, ext)
     }
 
+    /// The name as shown in a list: without its extension when the user
+    /// asked to hide extensions. Folders and names without an extension are
+    /// shown as they are.
+    public static func displayName(_ name: String, isDirectory: Bool, showsExtension: Bool) -> String {
+        showsExtension ? name : split(name, isDirectory: isDirectory).base
+    }
+
+    /// The real name to give an item after the user typed `typed` in the
+    /// rename field. When extensions are hidden the field held only the base
+    /// name, so the original extension is put back.
+    public static func renamedName(
+        typed: String,
+        original: String,
+        isDirectory: Bool,
+        showsExtension: Bool
+    ) -> String {
+        guard !showsExtension, !typed.isEmpty else { return typed }
+        let ext = split(original, isDirectory: isDirectory).ext
+        return ext.isEmpty ? typed : "\(typed).\(ext)"
+    }
+
     /// A free name in `folder`, starting from `name`: "a.txt", then
     /// "a (2).txt", "a (3).txt"…
     public static func availableURL(

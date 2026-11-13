@@ -19,6 +19,8 @@ struct FileTableView: NSViewRepresentable {
         var renameRequest: RenameRequest?
         /// Git state of the changed files and folders, by path.
         var gitStates: [String: GitFileState] = [:]
+        /// False when the extensions of file names are hidden.
+        var showsExtensions = true
     }
 
     let model: BrowserModel
