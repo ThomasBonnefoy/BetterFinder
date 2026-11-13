@@ -4,6 +4,13 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et les n
 
 ## [Non publié]
 
+## [0.19.0] - 2026-11-13
+
+Ouvrir un fichier avec une autre application.
+
+### Ajouté
+- « Ouvrir avec » au clic droit sur un ou plusieurs fichiers : le sous-menu liste les applications qui savent les ouvrir (celle par défaut en premier, avec son icône) et « Autre… » ouvre un sélecteur d'application. Rien n'est proposé quand la sélection contient un dossier.
+
 ## [0.18.2] - 2026-11-12
 
 ### Corrigé
