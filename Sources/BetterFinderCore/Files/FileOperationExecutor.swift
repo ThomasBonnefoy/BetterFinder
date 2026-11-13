@@ -46,6 +46,8 @@ public struct FileOperationExecutor: Sendable {
             return create(name, in: folder, isDirectory: true)
         case .createFile(let folder, let name):
             return create(name, in: folder, isDirectory: false)
+        case .compress(let sources, let folder, let name):
+            return compress(sources, in: folder, name: name)
         }
     }
 
@@ -235,6 +237,59 @@ public struct FileOperationExecutor: Sendable {
         } catch {
             return FileOperationOutcome(failure: Self.failure(error, url: url, remaining: []))
         }
+    }
+
+    // MARK: - Compress
+
+    private func compress(_ sources: [URL], in folder: URL, name: String) -> FileOperationOutcome {
+        if let problem = FileNaming.problem(with: name) {
+            return FileOperationOutcome(
+                failure: FileOperationFailure(reason: .invalidName(problem), url: nil, remaining: sources)
+            )
+        }
+        guard let first = sources.first else { return FileOperationOutcome() }
+        // The archive holds the items by their names, so they must share a
+        // folder to be told apart.
+        let parent = first.deletingLastPathComponent()
+        guard sources.allSatisfy({ Self.sameFolder($0.deletingLastPathComponent(), parent) }) else {
+            return FileOperationOutcome(
+                failure: FileOperationFailure(reason: .differentFolders, url: first, remaining: sources)
+            )
+        }
+        let destination = FileNaming.availableURL(for: name, in: folder, isDirectory: false)
+
+        // Info-ZIP's `zip`, run from the items' folder so that the archive
+        // starts at their names. Unlike `ditto`, which the Finder uses, it
+        // takes several items and adds no "__MACOSX" folder, which looks
+        // like clutter once the archive is opened on Windows.
+        let process = Process()
+        process.executableURL = URL(filePath: "/usr/bin/zip")
+        process.currentDirectoryURL = parent
+        process.arguments = ["-q", "-r", "-y", "-X", destination.path] + sources.map(\.lastPathComponent)
+        let output = Pipe()
+        process.standardOutput = output
+        process.standardError = output
+        do {
+            try process.run()
+        } catch {
+            return FileOperationOutcome(failure: Self.failure(error, url: first, remaining: sources))
+        }
+        // Read before waiting: a full pipe would block the process.
+        let message = String(data: output.fileHandleForReading.readDataToEndOfFile(), encoding: .utf8) ?? ""
+        process.waitUntilExit()
+        guard process.terminationStatus == 0 else {
+            // Do not leave a half-written archive behind.
+            try? FileManager.default.removeItem(at: destination)
+            let text = message.trimmingCharacters(in: .whitespacesAndNewlines)
+            return FileOperationOutcome(
+                failure: FileOperationFailure(
+                    reason: .system(text.isEmpty ? "La compression a échoué." : text),
+                    url: first,
+                    remaining: sources
+                )
+            )
+        }
+        return FileOperationOutcome(affected: [destination], undo: .trash([destination]))
     }
 
     // MARK: - Helpers

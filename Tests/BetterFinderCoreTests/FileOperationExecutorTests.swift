@@ -235,3 +235,95 @@ import Testing
         #expect(exists("Target/Async"))
     }
 }
+
+@Suite struct CompressTests {
+    private let files = FileManager.default
+    private let executor = FileOperationExecutor()
+    private let root: URL
+
+    /// root/{a.txt, b.txt, Dir/inner.txt}
+    init() throws {
+        root = files.temporaryDirectory
+            .appending(path: "BetterFinderZipTests-\(UUID().uuidString)", directoryHint: .isDirectory)
+        try files.createDirectory(at: root.appending(path: "Dir"), withIntermediateDirectories: true)
+        try Data("aaa".utf8).write(to: root.appending(path: "a.txt"))
+        try Data("bbb".utf8).write(to: root.appending(path: "b.txt"))
+        try Data("inner".utf8).write(to: root.appending(path: "Dir/inner.txt"))
+    }
+
+    private func cleanUp() { try? files.removeItem(at: root) }
+
+    /// Paths inside an archive, listed with the system `unzip`.
+    private func entries(of archive: URL) -> [String] {
+        let process = Process()
+        process.executableURL = URL(filePath: "/usr/bin/unzip")
+        process.arguments = ["-Z1", archive.path]
+        let output = Pipe()
+        process.standardOutput = output
+        try? process.run()
+        let data = output.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+        return String(decoding: data, as: UTF8.self).split(separator: "\n").map(String.init).sorted()
+    }
+
+    @Test func packsOneFileIntoAZipNextToIt() {
+        defer { cleanUp() }
+        let outcome = executor.execute(.compress([root.appending(path: "a.txt")], in: root, name: "a.txt.zip"))
+
+        #expect(outcome.failure == nil)
+        #expect(outcome.affected == [root.appending(path: "a.txt.zip")])
+        #expect(entries(of: root.appending(path: "a.txt.zip")) == ["a.txt"])
+        #expect(files.fileExists(atPath: root.appending(path: "a.txt").path))
+    }
+
+    @Test func aFolderKeepsItsNameAtTheTopOfTheArchive() {
+        defer { cleanUp() }
+        _ = executor.execute(.compress([root.appending(path: "Dir")], in: root, name: "Dir.zip"))
+        #expect(entries(of: root.appending(path: "Dir.zip")) == ["Dir/", "Dir/inner.txt"])
+    }
+
+    @Test func severalItemsShareOneArchive() {
+        defer { cleanUp() }
+        let outcome = executor.execute(.compress(
+            [root.appending(path: "a.txt"), root.appending(path: "b.txt")], in: root, name: "Archive.zip"))
+        #expect(outcome.failure == nil)
+        #expect(entries(of: root.appending(path: "Archive.zip")) == ["a.txt", "b.txt"])
+    }
+
+    @Test func itemsFromDifferentFoldersAreRefused() {
+        defer { cleanUp() }
+        let outcome = executor.execute(.compress(
+            [root.appending(path: "a.txt"), root.appending(path: "Dir/inner.txt")], in: root, name: "x.zip"))
+        #expect(outcome.failure?.reason == .differentFolders)
+        #expect(!files.fileExists(atPath: root.appending(path: "x.zip").path))
+    }
+
+    @Test func neverOverwritesAnExistingArchive() throws {
+        defer { cleanUp() }
+        try Data("old".utf8).write(to: root.appending(path: "a.txt.zip"))
+        let outcome = executor.execute(.compress([root.appending(path: "a.txt")], in: root, name: "a.txt.zip"))
+
+        #expect(outcome.affected == [root.appending(path: "a.txt (2).zip")])
+        #expect(try String(contentsOf: root.appending(path: "a.txt.zip"), encoding: .utf8) == "old")
+    }
+
+    @Test func undoPutsTheArchiveInTheTrash() {
+        defer { cleanUp() }
+        let outcome = executor.execute(.compress([root.appending(path: "a.txt")], in: root, name: "a.txt.zip"))
+        #expect(outcome.undo == .trash([root.appending(path: "a.txt.zip")]))
+    }
+
+    @Test func aMissingSourceFailsAndLeavesNoArchive() {
+        defer { cleanUp() }
+        let outcome = executor.execute(.compress([root.appending(path: "nope.txt")], in: root, name: "nope.txt.zip"))
+
+        #expect(outcome.failure != nil)
+        #expect(outcome.undo == nil)
+        #expect(!files.fileExists(atPath: root.appending(path: "nope.txt.zip").path))
+    }
+
+    @Test func archiveNamesFollowTheFinder() {
+        #expect(FileNaming.archiveName(for: ["photo.png"]) == "photo.png.zip")
+        #expect(FileNaming.archiveName(for: ["a", "b"]) == "Archive.zip")
+    }
+}

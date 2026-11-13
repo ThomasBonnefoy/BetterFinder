@@ -37,6 +37,8 @@ struct BrowserCommands: Commands {
             Button("Copier le chemin d'accès") { model?.copyPathOfSelection() }
                 .keyboardShortcut("c", modifiers: [.command, .shift])
                 .disabled(model == nil)
+            Button("Compresser") { model?.compressSelection() }
+                .disabled(model?.canCompressSelection != true)
             Button("Propriétés") { model?.showProperties() }
                 .keyboardShortcut("i")
                 .disabled(model == nil)

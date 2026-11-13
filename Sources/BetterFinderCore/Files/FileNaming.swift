@@ -49,6 +49,12 @@ public enum FileNaming {
         return ext.isEmpty ? typed : "\(typed).\(ext)"
     }
 
+    /// Name of the archive made from `names`: "photo.png.zip" for one item,
+    /// "Archive.zip" for several, as in the Finder.
+    public static func archiveName(for names: [String], multiple: String = "Archive") -> String {
+        names.count == 1 ? names[0] + ".zip" : multiple + ".zip"
+    }
+
     /// A free name in `folder`, starting from `name`: "a.txt", then
     /// "a (2).txt", "a (3).txt"…
     public static func availableURL(

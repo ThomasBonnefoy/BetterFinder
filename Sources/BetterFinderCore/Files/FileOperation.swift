@@ -16,6 +16,9 @@ public enum FileOperation: Equatable, Sendable {
     case delete([URL])
     case createFolder(in: URL, name: String)
     case createFile(in: URL, name: String)
+    /// Packs items into a new zip archive named `name` in a folder, the way
+    /// the Finder does. Never overwrites: a taken name gets a number.
+    case compress([URL], in: URL, name: String)
 }
 
 public struct FileMove: Equatable, Sendable {
@@ -41,6 +44,8 @@ public struct FileOperationFailure: Error, Equatable, Sendable {
         /// The volume has no Trash (many network shares): the items can only
         /// be deleted for good.
         case trashUnavailable
+        /// The items to pack are not all in the same folder.
+        case differentFolders
         /// The system refused; the text is its own explanation.
         case system(String)
     }

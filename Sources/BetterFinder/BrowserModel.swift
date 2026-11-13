@@ -680,6 +680,27 @@ final class BrowserModel {
         )
     }
 
+    // MARK: - Compress
+
+    /// True when the selection can be packed into a zip: not in the Trash,
+    /// not on a drive's page.
+    var canCompressSelection: Bool {
+        guard operationFolder != nil, !isInTrash, !selection.isEmpty else { return false }
+        // Search results can come from several folders; an archive needs one.
+        return Set(selection.map { $0.deletingLastPathComponent().path }).count == 1
+    }
+
+    /// Packs the selection into a zip archive next to it (in the folder
+    /// shown), then selects the archive.
+    func compressSelection() {
+        guard canCompressSelection, let folder = operationFolder else { return }
+        let urls = selectedItems.map(\.url)
+        perform(
+            .compress(urls, in: folder, name: FileNaming.archiveName(for: urls.map(\.lastPathComponent))),
+            actionName: "la compression", activity: "Compression…"
+        )
+    }
+
     /// Explorer's "Copy as path".
     func copyPathOfSelection() {
         let paths = selectedItems.map(\.url.path)
@@ -821,6 +842,11 @@ final class BrowserModel {
             )
         case .invalidName(let problem):
             alert = OperationAlert(title: "Nom impossible", message: Self.explanation(of: problem))
+        case .differentFolders:
+            alert = OperationAlert(
+                title: "Compression impossible",
+                message: "Les éléments à compresser doivent être dans le même dossier."
+            )
         case .intoItself:
             alert = OperationAlert(
                 title: "Opération impossible",
