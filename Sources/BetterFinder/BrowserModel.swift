@@ -657,11 +657,47 @@ final class BrowserModel {
         perform(.rename(url, to: newName), actionName: "le renommage", activity: "Renommage…")
     }
 
-    /// Asks the file list to edit the name of the single selected item.
+    /// Renames the selection: in place when it is one item, with the batch
+    /// sheet when there are several.
     func renameSelection() {
+        if selection.count > 1 {
+            beginBatchRename()
+            return
+        }
         guard selection.count == 1, let url = selection.first else { return }
         renameRequestCount += 1
         renameRequest = RenameRequest(id: renameRequestCount, url: url)
+    }
+
+    /// Set to show the batch rename sheet.
+    var batchRenameRequest: BatchRenameRequest?
+
+    /// True when the selection can be renamed together: several items of
+    /// one folder, which is not the Trash.
+    var canBatchRename: Bool {
+        selection.count > 1 && !isInTrash && operationFolder != nil
+            && Set(selection.map { $0.deletingLastPathComponent().path }).count == 1
+    }
+
+    func beginBatchRename() {
+        guard canBatchRename else { return }
+        let selected = selectedItems
+        guard let parent = selected.first?.url.deletingLastPathComponent() else { return }
+        // Names that could clash: the whole folder, not only what is listed
+        // (hidden files, or a search showing a part of it).
+        let names = isSearching
+            ? ((try? FileManager.default.contentsOfDirectory(atPath: parent.path)) ?? [])
+            : allItems.map(\.url.lastPathComponent)
+        batchRenameRequest = BatchRenameRequest(
+            items: selected.map { BatchRenameItem(url: $0.url, isDirectory: $0.isBrowsable) },
+            namesInFolder: names
+        )
+    }
+
+    func renameMany(_ moves: [FileMove]) {
+        batchRenameRequest = nil
+        guard !moves.isEmpty else { return }
+        perform(.renameMany(moves), actionName: "le renommage", activity: "Renommage…")
     }
 
     func newFolder() {

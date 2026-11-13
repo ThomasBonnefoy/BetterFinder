@@ -38,6 +38,8 @@ public struct FileOperationExecutor: Sendable {
             return moveExact(moves)
         case .rename(let url, let newName):
             return rename(url, to: newName)
+        case .renameMany(let moves):
+            return renameMany(moves)
         case .trash(let urls):
             return trash(urls)
         case .delete(let urls):
@@ -171,6 +173,69 @@ public struct FileOperationExecutor: Sendable {
         } catch {
             return FileOperationOutcome(failure: Self.failure(error, url: url, remaining: [url]))
         }
+    }
+
+    /// Renames in two steps (every item to a temporary name, then to its
+    /// final one) so that items can take each other's names.
+    private func renameMany(_ requested: [FileMove]) -> FileOperationOutcome {
+        let files = FileManager.default
+        let moves = requested.filter { $0.from != $0.to }
+        guard !moves.isEmpty else { return FileOperationOutcome() }
+        let all = moves.map(\.from)
+
+        // Everything is checked before the first rename.
+        let sources = Set(moves.map { $0.from.standardizedFileURL.path.lowercased() })
+        var targets = Set<String>()
+        for move in moves {
+            let name = move.to.lastPathComponent
+            if let problem = FileNaming.problem(with: name) {
+                return FileOperationOutcome(failure: FileOperationFailure(reason: .invalidName(problem), url: move.from, remaining: all))
+            }
+            guard Self.sameFolder(move.from.deletingLastPathComponent(), move.to.deletingLastPathComponent()) else {
+                return FileOperationOutcome(failure: FileOperationFailure(reason: .system("Les éléments doivent rester dans leur dossier."), url: move.from, remaining: all))
+            }
+            let key = move.to.standardizedFileURL.path.lowercased()
+            let isTakenByAnotherItem = files.fileExists(atPath: move.to.path) && !sources.contains(key)
+            if !targets.insert(key).inserted || isTakenByAnotherItem {
+                return FileOperationOutcome(failure: FileOperationFailure(reason: .nameTaken, url: move.to, remaining: all))
+            }
+        }
+
+        // Step 1: out of the way.
+        var temporary: [(move: FileMove, temp: URL)] = []
+        func putBackFromTemporary(_ items: some Sequence<(move: FileMove, temp: URL)>) {
+            for item in items { try? files.moveItem(at: item.temp, to: item.move.from) }
+        }
+        for move in moves {
+            let temp = move.from.deletingLastPathComponent().appending(path: ".betterfinder-rename-\(UUID().uuidString)")
+            do {
+                try files.moveItem(at: move.from, to: temp)
+                temporary.append((move, temp))
+            } catch {
+                putBackFromTemporary(temporary)
+                return FileOperationOutcome(failure: Self.failure(error, url: move.from, remaining: all))
+            }
+        }
+
+        // Step 2: to the final names.
+        var done: [FileMove] = []
+        for (index, item) in temporary.enumerated() {
+            do {
+                try files.moveItem(at: item.temp, to: item.move.to)
+                done.append(item.move)
+            } catch {
+                // Put everything back as it was.
+                for finished in done {
+                    try? files.moveItem(at: finished.to, to: finished.from)
+                }
+                putBackFromTemporary(temporary[index...])
+                return FileOperationOutcome(failure: Self.failure(error, url: item.move.from, remaining: all))
+            }
+        }
+        return FileOperationOutcome(
+            affected: done.map(\.to),
+            undo: .renameMany(done.map(\.reversed))
+        )
     }
 
     // MARK: - Trash and delete

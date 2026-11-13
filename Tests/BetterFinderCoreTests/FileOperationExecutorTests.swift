@@ -327,3 +327,123 @@ import Testing
         #expect(FileNaming.archiveName(for: ["a", "b"]) == "Archive.zip")
     }
 }
+
+@Suite struct RenameManyTests {
+    private let files = FileManager.default
+    private let executor = FileOperationExecutor()
+    private let root: URL
+
+    /// root/{a.txt ("A"), b.txt ("B"), c.txt ("C")}
+    init() throws {
+        root = files.temporaryDirectory
+            .appending(path: "BetterFinderRenameManyTests-\(UUID().uuidString)", directoryHint: .isDirectory)
+        try files.createDirectory(at: root, withIntermediateDirectories: true)
+        for name in ["a", "b", "c"] {
+            try Data(name.uppercased().utf8).write(to: root.appending(path: "\(name).txt"))
+        }
+    }
+
+    private func cleanUp() { try? files.removeItem(at: root) }
+    private func url(_ name: String) -> URL { root.appending(path: name) }
+    private func text(_ name: String) -> String? { try? String(contentsOf: url(name), encoding: .utf8) }
+    private func names() -> [String] { ((try? files.contentsOfDirectory(atPath: root.path)) ?? []).sorted() }
+
+    @Test func renamesSeveralItems() {
+        defer { cleanUp() }
+        let outcome = executor.execute(.renameMany([
+            FileMove(from: url("a.txt"), to: url("x.txt")),
+            FileMove(from: url("b.txt"), to: url("y.txt")),
+        ]))
+        #expect(outcome.failure == nil)
+        #expect(names() == ["c.txt", "x.txt", "y.txt"])
+        #expect(text("x.txt") == "A")
+        #expect(outcome.affected == [url("x.txt"), url("y.txt")])
+    }
+
+    @Test func twoItemsCanSwapNames() {
+        defer { cleanUp() }
+        let outcome = executor.execute(.renameMany([
+            FileMove(from: url("a.txt"), to: url("b.txt")),
+            FileMove(from: url("b.txt"), to: url("a.txt")),
+        ]))
+        #expect(outcome.failure == nil)
+        #expect(text("a.txt") == "B")
+        #expect(text("b.txt") == "A")
+        #expect(names() == ["a.txt", "b.txt", "c.txt"])
+    }
+
+    @Test func aChainShiftsNames() {
+        defer { cleanUp() }
+        let outcome = executor.execute(.renameMany([
+            FileMove(from: url("a.txt"), to: url("b.txt")),
+            FileMove(from: url("b.txt"), to: url("c.txt")),
+            FileMove(from: url("c.txt"), to: url("d.txt")),
+        ]))
+        #expect(outcome.failure == nil)
+        #expect(names() == ["b.txt", "c.txt", "d.txt"])
+        #expect(text("b.txt") == "A")
+        #expect(text("d.txt") == "C")
+    }
+
+    @Test func undoGivesTheOriginalNamesBack() {
+        defer { cleanUp() }
+        let outcome = executor.execute(.renameMany([
+            FileMove(from: url("a.txt"), to: url("b.txt")),
+            FileMove(from: url("b.txt"), to: url("a.txt")),
+        ]))
+        let undo = try? #require(outcome.undo)
+        _ = executor.execute(undo ?? .renameMany([]))
+        #expect(text("a.txt") == "A")
+        #expect(text("b.txt") == "B")
+    }
+
+    @Test func aNameTakenByAnItemLeftAloneChangesNothing() {
+        defer { cleanUp() }
+        let outcome = executor.execute(.renameMany([
+            FileMove(from: url("a.txt"), to: url("x.txt")),
+            FileMove(from: url("b.txt"), to: url("c.txt")),
+        ]))
+        #expect(outcome.failure?.reason == .nameTaken)
+        #expect(outcome.undo == nil)
+        #expect(names() == ["a.txt", "b.txt", "c.txt"])
+        #expect(text("a.txt") == "A")
+    }
+
+    @Test func twoItemsGoingToTheSameNameChangeNothing() {
+        defer { cleanUp() }
+        let outcome = executor.execute(.renameMany([
+            FileMove(from: url("a.txt"), to: url("x.txt")),
+            FileMove(from: url("b.txt"), to: url("X.txt")),
+        ]))
+        #expect(outcome.failure?.reason == .nameTaken)
+        #expect(names() == ["a.txt", "b.txt", "c.txt"])
+    }
+
+    @Test func anInvalidNameChangesNothing() {
+        defer { cleanUp() }
+        let outcome = executor.execute(.renameMany([
+            FileMove(from: url("a.txt"), to: url("ok.txt")),
+            FileMove(from: url("b.txt"), to: root.appending(path: "bad:name.txt")),
+        ]))
+        #expect(outcome.failure?.reason == .invalidName(.forbiddenCharacter))
+        #expect(names() == ["a.txt", "b.txt", "c.txt"])
+    }
+
+    @Test func aMissingItemPutsEverythingBack() {
+        defer { cleanUp() }
+        let outcome = executor.execute(.renameMany([
+            FileMove(from: url("a.txt"), to: url("x.txt")),
+            FileMove(from: url("ghost.txt"), to: url("y.txt")),
+        ]))
+        #expect(outcome.failure != nil)
+        #expect(names() == ["a.txt", "b.txt", "c.txt"])
+        #expect(text("a.txt") == "A")
+    }
+
+    @Test func changingOnlyTheCaseIsAllowed() {
+        defer { cleanUp() }
+        let outcome = executor.execute(.renameMany([FileMove(from: url("a.txt"), to: url("A.txt"))]))
+        #expect(outcome.failure == nil)
+        #expect(names().contains("A.txt"))
+    }
+}

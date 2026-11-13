@@ -11,6 +11,11 @@ public enum FileOperation: Equatable, Sendable {
     /// This is what undoing a move, a rename or a trip to the Trash uses.
     case moveExact([FileMove])
     case rename(URL, to: String)
+    /// Renames several items of one folder at once. Items may take each
+    /// other's names (a swap): nothing is renamed unless all can be, and
+    /// a failure puts back what was done. Its undo is the same operation
+    /// the other way round.
+    case renameMany([FileMove])
     case trash([URL])
     /// Deletes for good. Cannot be undone.
     case delete([URL])

@@ -55,8 +55,13 @@ enum FileListKeys {
                 host.toggleQuickLook()
                 return true
             case KeyCode.f2:
-                guard selected.count == 1 else { return false }
-                host.beginRenameOfSelection()
+                if selected.count == 1 {
+                    host.beginRenameOfSelection()
+                    return true
+                }
+                // Several items: the batch rename sheet.
+                guard model.canBatchRename else { return false }
+                model.beginBatchRename()
                 return true
             case KeyCode.f5:
                 model.reload()

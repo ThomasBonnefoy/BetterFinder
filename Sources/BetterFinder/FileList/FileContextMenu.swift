@@ -62,7 +62,11 @@ final class FileContextMenu: NSObject, NSMenuDelegate {
         menu.addItem(item("Couper", #selector(menuCut)))
         menu.addItem(item("Copier", #selector(menuCopy)))
         menu.addItem(.separator())
-        menu.addItem(item("Renommer", #selector(menuRename), enabled: selectionCount == 1))
+        if selectionCount > 1 {
+            menu.addItem(item("Renommer \(selectionCount) éléments…", #selector(menuBatchRename), enabled: model.canBatchRename))
+        } else {
+            menu.addItem(item("Renommer", #selector(menuRename)))
+        }
         if model.canCompressSelection {
             menu.addItem(item(selectionCount > 1 ? "Compresser \(selectionCount) éléments" : "Compresser", #selector(menuCompress)))
         }
@@ -153,6 +157,7 @@ final class FileContextMenu: NSObject, NSMenuDelegate {
         model.openSelection(with: app)
     }
     @objc private func menuOpenWithOther() { model.chooseApplicationToOpenSelection() }
+    @objc private func menuBatchRename() { model.beginBatchRename() }
     @objc private func menuRestore() { model.restoreSelection() }
     @objc private func menuCompress() { model.compressSelection() }
     @objc private func menuProperties() { model.showProperties() }
