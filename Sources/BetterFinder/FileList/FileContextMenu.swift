@@ -67,6 +67,9 @@ final class FileContextMenu: NSObject, NSMenuDelegate {
             menu.addItem(item(selectionCount > 1 ? "Compresser \(selectionCount) éléments" : "Compresser", #selector(menuCompress)))
         }
         if model.isInTrash {
+            if model.canRestoreSelection {
+                menu.addItem(item("Remettre", #selector(menuRestore)))
+            }
             menu.addItem(item("Supprimer définitivement…", #selector(menuDeleteForGood)))
         } else {
             menu.addItem(item("Mettre à la corbeille", #selector(menuTrash)))
@@ -150,6 +153,7 @@ final class FileContextMenu: NSObject, NSMenuDelegate {
         model.openSelection(with: app)
     }
     @objc private func menuOpenWithOther() { model.chooseApplicationToOpenSelection() }
+    @objc private func menuRestore() { model.restoreSelection() }
     @objc private func menuCompress() { model.compressSelection() }
     @objc private func menuProperties() { model.showProperties() }
     @objc private func menuQuickLook() { quickLook() }

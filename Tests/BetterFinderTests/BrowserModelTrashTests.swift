@@ -152,4 +152,44 @@ import BetterFinderCore
         #expect(!model.drop([old], into: fakeTrash, mode: .move))
         #expect(files.fileExists(atPath: old.path))
     }
+
+    // MARK: - Put back
+
+    @Test func putsTheSelectionBackThroughTheFinderScript() async throws {
+        defer { cleanUp() }
+        let model = try await model(at: fakeTrash)
+        final class Box: @unchecked Sendable { var paths: [String] = [] }
+        let box = Box()
+        model.putBackRunner = { paths in
+            box.paths = paths
+            return .init(status: 0, message: "")
+        }
+        model.selection = [fakeTrash.appending(path: "old.txt")]
+        #expect(model.canRestoreSelection)
+
+        model.restoreSelection()
+        try await waitFor { model.activity == nil && !box.paths.isEmpty }
+
+        #expect(box.paths == [fakeTrash.appending(path: "old.txt").path])
+        #expect(model.alert == nil)
+    }
+
+    @Test func aRefusedAutomationExplainsWhatToDo() async throws {
+        defer { cleanUp() }
+        let model = try await model(at: fakeTrash)
+        model.putBackRunner = { _ in .init(status: 1, message: "Not authorized to send Apple events (-1743)") }
+        model.selection = [fakeTrash.appending(path: "old.txt")]
+
+        model.restoreSelection()
+        try await waitFor { model.alert != nil }
+
+        #expect(model.alert?.message.contains("Automatisation") == true)
+    }
+
+    @Test func nothingCanBePutBackOutsideTheTrash() async throws {
+        defer { cleanUp() }
+        let model = try await model(at: folder)
+        model.selection = [folder.appending(path: "a.txt")]
+        #expect(!model.canRestoreSelection)
+    }
 }

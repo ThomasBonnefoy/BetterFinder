@@ -680,6 +680,42 @@ final class BrowserModel {
         )
     }
 
+    // MARK: - Put back
+
+    /// Puts items back in the Trash's listing: replaced by tests.
+    @ObservationIgnored var putBackRunner: TrashPutBack.Runner = TrashPutBack.osascript
+
+    /// True when "Remettre" applies: the selection is at the top of the
+    /// Trash (an item inside a trashed folder cannot be put back alone).
+    var canRestoreSelection: Bool {
+        isOnTrash && !selection.isEmpty
+    }
+
+    /// Puts the selected items of the Trash back where they came from.
+    func restoreSelection() {
+        guard canRestoreSelection else { return }
+        let urls = selectedItems.map(\.url)
+        runningOperations += 1
+        activity = "Remise en place…"
+        Task {
+            let failure = await TrashPutBack.restore(urls, runner: putBackRunner)
+            runningOperations -= 1
+            if runningOperations == 0 { activity = nil }
+            switch failure {
+            case nil:
+                break
+            case .notAllowed:
+                alert = OperationAlert(
+                    title: "BetterFinder ne peut pas remettre les éléments",
+                    message: "Pour remettre un élément à sa place, BetterFinder demande au Finder de le faire. Autorisez-le dans Réglages Système > Confidentialité et sécurité > Automatisation, en cochant Finder sous BetterFinder."
+                )
+            case .failed(let message):
+                alert = OperationAlert(title: "Impossible de remettre l'élément", message: message)
+            }
+            load(resetContent: false)
+        }
+    }
+
     // MARK: - Compress
 
     /// True when the selection can be packed into a zip: not in the Trash,

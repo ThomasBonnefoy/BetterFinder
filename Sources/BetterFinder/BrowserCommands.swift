@@ -22,6 +22,8 @@ struct BrowserCommands: Commands {
                 .keyboardShortcut("t", modifiers: [.command, .option])
                 .disabled(model?.terminalFolder == nil)
             Divider()
+            Button("Remettre") { model?.restoreSelection() }
+                .disabled(model?.canRestoreSelection != true)
             Button("Vider la corbeille…") { model?.askToEmptyTrash() }
                 .disabled(model == nil)
             Divider()
