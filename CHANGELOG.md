@@ -4,6 +4,14 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et les n
 
 ## [Non publié]
 
+## [0.27.0] - 2026-11-13
+
+La barre d'outils se compose par glisser-déposer.
+
+### Modifié
+- « Personnaliser la barre d'outils… » montre la barre d'outils en haut, sous forme de pastilles, et les éléments disponibles en dessous (les deux espaces compris, en pointillés), comme la palette de macOS. On glisse une pastille de la barre pour la déplacer (elle se place avant celle sur laquelle on la dépose, ou à la fin), on glisse un élément du bas dans la barre pour l'ajouter, et on dépose une pastille de la barre sur la zone du bas pour la retirer. Un trait de couleur montre où elle ira.
+- Sans glisser : un clic sur un élément du bas l'ajoute à la fin, et le clic droit sur une pastille de la barre propose « Reculer », « Avancer » et « Retirer ». L'ancienne liste avec « Monter » et « Descendre » disparaît.
+
 ## [0.26.0] - 2026-11-13
 
 Des espaces dans la barre d'outils.
