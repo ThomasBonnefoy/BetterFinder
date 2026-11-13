@@ -23,6 +23,7 @@ L'idée de départ : garder les **lecteurs réseau toujours visibles dans la bar
 - Précédent, suivant, dossier parent
 - Raccourcis de l'Explorateur Windows adaptés au Mac
 - **Barre d'outils personnalisable** : menu Présentation > « Personnaliser la barre d'outils… » ou clic droit sur un bouton, pour choisir ses boutons et leur ordre ; un bouton « Nouveau fichier » crée un document texte en un clic
+- Panneau d'aperçu (`Option+P`) : aperçu Quick Look et détails de l'élément sélectionné
 - Renommage par lot (numéroter, chercher et remplacer, préfixe et suffixe) avec aperçu
 - Remettre un élément de la corbeille à sa place (via le Finder)
 - Compresser en zip, sans le dossier `__MACOSX` des archives du Finder
@@ -69,6 +70,7 @@ Le mot de passe est demandé par macOS à la première connexion et rangé dans 
 | Présentation détails, icônes | `Cmd+1`, `Cmd+2` |
 | Coup d'œil | `Espace` ou `Cmd+Y` |
 | Propriétés | `Cmd+I` ou `Option+Entrée` |
+| Panneau d'aperçu | `Option+P` |
 | Ouvrir dans le terminal | `Cmd+Option+T` |
 | Ajouter un lecteur réseau | `Cmd+K` |
 | Actualiser | `Cmd+R` ou `F5` |

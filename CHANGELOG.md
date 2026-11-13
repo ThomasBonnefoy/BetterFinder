@@ -4,6 +4,16 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et les n
 
 ## [Non publié]
 
+## [0.25.0] - 2026-11-13
+
+Le panneau d'aperçu et de détails.
+
+### Ajouté
+- Un panneau à droite de la liste (menu Présentation > « Panneau d'aperçu », `Option+P`, ou le bouton de la barre d'outils) : aperçu Quick Look de l'élément sélectionné (images, PDF, texte, vidéos…), son type, sa taille, sa date de modification, son emplacement, et un bouton « Propriétés… ». Avec plusieurs éléments, il donne leur nombre et leur taille totale ; sans sélection, il le dit. Il suit la sélection dans les deux présentations.
+- Les dossiers et les lecteurs réseau montrent l'icône au lieu de l'aperçu, pour ne jamais lire un fichier distant juste pour l'afficher. Le panneau n'apparaît pas sur « Ce Mac » ni sur la page d'un lecteur.
+- Réglage « Ouvrir le panneau d'aperçu dans les nouvelles fenêtres » (`Cmd+,`). L'état est retenu d'un lancement à l'autre.
+- Trois boutons de plus à ajouter dans la barre d'outils : « Compresser », « Propriétés » et « Panneau d'aperçu ». Le bouton « Renommer » s'applique aussi à plusieurs éléments.
+
 ## [0.24.0] - 2026-11-13
 
 Renommer plusieurs éléments d'un coup.
