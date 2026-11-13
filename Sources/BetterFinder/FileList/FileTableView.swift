@@ -1,4 +1,5 @@
 import AppKit
+import Quartz
 import BetterFinderCore
 import SwiftUI
 
@@ -16,6 +17,10 @@ struct FileTableView: NSViewRepresentable {
         var focusRequests: Int
         var cutURLs: Set<URL>
         var renameRequest: RenameRequest?
+        /// Git state of the changed files and folders, by path.
+        var gitStates: [String: GitFileState] = [:]
+        /// False when the extensions of file names are hidden.
+        var showsExtensions = true
     }
 
     let model: BrowserModel
@@ -115,8 +120,59 @@ enum FileColumn: String, CaseIterable {
 
 /// Table view that lets its coordinator handle keys first, and that answers
 /// the Edit menu (Cut, Copy, Paste, Delete) for the selected files.
-final class FileTable: NSTableView {
+final class FileTable: NSTableView, @preconcurrency QLPreviewPanelDataSource, @preconcurrency QLPreviewPanelDelegate {
     weak var coordinator: FileTableCoordinator?
+
+    // MARK: Quick Look
+
+    /// Shows or hides the Quick Look panel for the selected files.
+    func toggleQuickLook() {
+        guard let panel = QLPreviewPanel.shared() else { return }
+        if QLPreviewPanel.sharedPreviewPanelExists(), panel.isVisible {
+            panel.orderOut(nil)
+        } else if !selectedRowIndexes.isEmpty {
+            panel.makeKeyAndOrderFront(nil)
+        }
+    }
+
+    /// The selection changed: the panel follows it.
+    func refreshQuickLook() {
+        guard QLPreviewPanel.sharedPreviewPanelExists(), let panel = QLPreviewPanel.shared(), panel.isVisible else { return }
+        panel.reloadData()
+    }
+
+    override func acceptsPreviewPanelControl(_ panel: QLPreviewPanel!) -> Bool { true }
+
+    override func beginPreviewPanelControl(_ panel: QLPreviewPanel!) {
+        MainActor.assumeIsolated {
+            panel.dataSource = self
+            panel.delegate = self
+        }
+    }
+
+    override func endPreviewPanelControl(_ panel: QLPreviewPanel!) {
+        MainActor.assumeIsolated {
+            panel.dataSource = nil
+            panel.delegate = nil
+        }
+    }
+
+    func numberOfPreviewItems(in panel: QLPreviewPanel!) -> Int {
+        coordinator?.model.selectedItems.count ?? 0
+    }
+
+    func previewPanel(_ panel: QLPreviewPanel!, previewItemAt index: Int) -> (any QLPreviewItem)! {
+        guard let items = coordinator?.model.selectedItems, items.indices.contains(index) else { return nil }
+        return items[index].url as NSURL
+    }
+
+    /// Arrow keys typed in the panel move the selection of the list, which
+    /// the panel then follows.
+    func previewPanel(_ panel: QLPreviewPanel!, handle event: NSEvent!) -> Bool {
+        guard event.type == .keyDown, [123, 124, 125, 126].contains(event.keyCode) else { return false }
+        keyDown(with: event)
+        return true
+    }
 
     override func keyDown(with event: NSEvent) {
         if coordinator?.handleKey(event) == true { return }

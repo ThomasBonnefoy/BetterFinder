@@ -59,6 +59,98 @@ import BetterFinderCore
         model.selection = Set(model.items.filter { names.contains($0.name) }.map(\.url))
     }
 
+    // MARK: - Drag and drop
+
+    @Test func droppingFilesOnAFolderMovesThem() async throws {
+        defer { cleanUp() }
+        let model = try await model(at: source)
+
+        let urls = [source.appending(path: "a.txt")]
+        #expect(model.drop(urls, into: target, mode: .move))
+        try await settled(model)
+
+        #expect(names(in: target) == ["a.txt"])
+        #expect(names(in: source) == ["b.txt"])
+        #expect(model.items.map(\.name) == ["b.txt"])
+    }
+
+    @Test func droppingWithACopyKeepsTheOriginals() async throws {
+        defer { cleanUp() }
+        let model = try await model(at: source)
+
+        let urls = [source.appending(path: "a.txt"), source.appending(path: "b.txt")]
+        #expect(model.drop(urls, into: target, mode: .copy))
+        try await settled(model)
+
+        #expect(names(in: target) == ["a.txt", "b.txt"])
+        #expect(names(in: source) == ["a.txt", "b.txt"])
+    }
+
+    @Test func aDropCanBeUndone() async throws {
+        defer { cleanUp() }
+        let model = try await model(at: source)
+
+        model.drop([source.appending(path: "a.txt")], into: target, mode: .move)
+        try await settled(model)
+        undoManager.undo()
+        try await settled(model)
+
+        #expect(names(in: source) == ["a.txt", "b.txt"])
+        #expect(names(in: target) == [])
+    }
+
+    // MARK: - Search
+
+    private func searched(_ model: BrowserModel, for text: String) async throws {
+        model.searchText = text
+        for _ in 0..<500 {
+            try await Task.sleep(for: .milliseconds(10))
+            if !model.isSearchRunning { return }
+        }
+        Issue.record("The search did not finish")
+    }
+
+    @Test func searchFindsItemsInSubfolders() async throws {
+        defer { cleanUp() }
+        let model = try await model(at: root)
+
+        try await searched(model, for: "a.t")
+        #expect(model.isSearching)
+        #expect(model.items.map(\.url) == [source.appending(path: "a.txt")])
+
+        // Emptying the field brings the folder back.
+        model.searchText = ""
+        #expect(!model.isSearching)
+        #expect(model.items.map(\.name) == ["Source", "Target"])
+    }
+
+    @Test func searchEndsWhenWentElsewhere() async throws {
+        defer { cleanUp() }
+        let model = try await model(at: root)
+
+        try await searched(model, for: "txt")
+        #expect(model.items.count == 2)
+        model.navigate(to: target)
+        try await settled(model)
+
+        #expect(model.searchText.isEmpty)
+        #expect(!model.isSearching)
+    }
+
+    @Test func showingAResultsFolderLeavesTheSearch() async throws {
+        defer { cleanUp() }
+        let model = try await model(at: root)
+
+        try await searched(model, for: "b.txt")
+        model.selection = [source.appending(path: "b.txt")]
+        model.showSelectionInItsFolder()
+        try await settled(model)
+
+        #expect(model.currentURL == source)
+        #expect(!model.isSearching)
+        #expect(model.selection == [source.appending(path: "b.txt")])
+    }
+
     // MARK: - Copy, cut, paste
 
     @Test func copyThenPasteInAnotherFolder() async throws {

@@ -32,6 +32,8 @@
 	<string>NSApplication</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>BetterFinder demande au Finder de remettre les éléments de la corbeille à leur place d'origine.</string>
 	<key>NSDesktopFolderUsageDescription</key>
 	<string>BetterFinder affiche le contenu de votre dossier Bureau.</string>
 	<key>NSDocumentsFolderUsageDescription</key>

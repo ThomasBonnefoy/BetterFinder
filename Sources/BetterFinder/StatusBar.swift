@@ -9,14 +9,28 @@ struct StatusBar: View {
         HStack(spacing: 16) {
             // A drive's page and the computer's overview list no file:
             // counting items would be noise.
-            if model.displayedDriveID == nil, !model.isOnComputer {
-                Text(Self.countText(model.items.count))
+            if model.displayedDriveID == nil, !model.isOnComputer, !model.accessDenied {
+                Text(model.isSearching
+                    ? Self.resultsText(model.items.count)
+                    : Self.countText(model.items.count))
                 let selected = model.selectedItems
                 if !selected.isEmpty {
                     Text(Self.selectionText(selected))
                 }
+                if model.isSearching, selected.count == 1, let item = selected.first {
+                    Text("Dans " + Self.folderText(of: item.url))
+                }
             }
             Spacer()
+            if let info = model.gitInfo {
+                GitStatusLabel(info: info) { branch, remote in
+                    model.switchBranch(to: branch, remoteBranch: remote)
+                }
+            }
+            if model.isSearchRunning {
+                ProgressView().controlSize(.mini)
+                Text("Recherche…")
+            }
             if let activity = model.activity {
                 ProgressView().controlSize(.mini)
                 Text(activity)
@@ -32,6 +46,24 @@ struct StatusBar: View {
 
     static func countText(_ count: Int) -> String {
         count > 1 ? "\(count) éléments" : "\(count) élément"
+    }
+
+    static func resultsText(_ count: Int) -> String {
+        count > 1 ? "\(count) résultats" : "\(count) résultat"
+    }
+
+    /// Folder holding an item, with the home folder written as "~".
+    static func folderText(of url: URL) -> String {
+        (url.deletingLastPathComponent().path as NSString).abbreviatingWithTildeInPath
+    }
+
+    /// The total size of a selection, when all of it is files; otherwise a
+    /// reminder that folder sizes are in the Properties.
+    static func selectionDetail(_ selected: [FileItem]) -> String {
+        guard selected.allSatisfy({ $0.size != nil }) else {
+            return "Les tailles de dossiers s'affichent dans les propriétés."
+        }
+        return "Taille totale : " + FileFormat.size(selected.reduce(Int64(0)) { $0 + ($1.size ?? 0) })
     }
 
     static func selectionText(_ selected: [FileItem]) -> String {

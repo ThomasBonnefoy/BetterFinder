@@ -1,6 +1,10 @@
+import BetterFinderCore
 import Foundation
 
 enum DisplayName {
+    /// What the Trash is called.
+    static let trash = "Corbeille"
+
     /// Name of a folder as macOS shows it ("Bureau" for ~/Desktop,
     /// "Macintosh HD" for /).
     ///
@@ -8,6 +12,7 @@ enum DisplayName {
     /// be network shares, where a disk access on the main thread could stall.
     static func of(_ url: URL) -> String {
         let path = url.path
+        if TrashFolder.isTrash(url) { return trash }
         if path.hasPrefix("/Volumes/") {
             return url.lastPathComponent
         }

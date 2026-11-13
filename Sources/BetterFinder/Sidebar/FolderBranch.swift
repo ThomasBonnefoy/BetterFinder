@@ -54,9 +54,17 @@ struct FolderRow: View {
         Label(folder.name, systemImage: "folder")
             .sidebarRow { model.navigate(to: folder.url) }
             .tag(SidebarItem.folder(node))
+            .folderDrop(on: folder.url, model: model)
             .contextMenu {
                 Button("Ouvrir") { model.navigate(to: folder.url) }
                 Button("Ouvrir dans un nouvel onglet") { model.openInNewTab(folder.url) }
+                Button("Ouvrir dans le terminal") { model.openInTerminal(folder.url) }
+                Divider()
+                if FavoriteStore.shared.contains(folder.url) {
+                    Button("Retirer des favoris") { FavoriteStore.shared.remove(folder.url) }
+                } else {
+                    Button("Ajouter aux favoris") { FavoriteStore.shared.add([folder.url]) }
+                }
                 Divider()
                 Button("Copier le chemin d'accès") { model.clipboard.copyText(folder.url.path) }
                 Button("Afficher dans le Finder") {
