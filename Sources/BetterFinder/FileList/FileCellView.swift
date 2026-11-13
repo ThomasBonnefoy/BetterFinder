@@ -8,6 +8,9 @@ final class FileCellView: NSTableCellView {
     private let column: FileColumn
     /// Git state of the item, at the end of the name column.
     private var badge: GitBadgeView?
+    /// Makes the picture of an image while the generic icon is shown.
+    private var thumbnailTask: Task<Void, Never>?
+    private var shownURL: URL?
 
     init(column: FileColumn) {
         self.column = column
@@ -75,7 +78,7 @@ final class FileCellView: NSTableCellView {
         switch column {
         case .name:
             textField?.stringValue = item.displayName(showsExtension: showsExtension)
-            imageView?.image = FileIcon.image(for: item, isLocalVolume: isLocalVolume)
+            showIcon(of: item, isLocalVolume: isLocalVolume)
         case .dateModified:
             textField?.stringValue = item.modificationDate.map(FileFormat.date) ?? ""
         case .kind:
@@ -87,6 +90,31 @@ final class FileCellView: NSTableCellView {
 }
 
 extension FileCellView {
+    /// The icon of the type at once, then the picture of the file if it has
+    /// one. A cell is reused for other files: the picture is only used if the
+    /// cell still shows the file it was made for.
+    private func showIcon(of item: FileItem, isLocalVolume: Bool) {
+        thumbnailTask?.cancel()
+        thumbnailTask = nil
+        shownURL = item.url
+        let side: CGFloat = 16
+        if Thumbnails.wants(item, isLocalVolume: isLocalVolume) {
+            if let image = Thumbnails.cached(for: item, side: side) {
+                imageView?.image = image
+                return
+            }
+            imageView?.image = FileIcon.image(for: item, isLocalVolume: isLocalVolume)
+            thumbnailTask = Task { @MainActor [weak self] in
+                guard let image = await Thumbnails.load(for: item, side: side),
+                      !Task.isCancelled, self?.shownURL == item.url
+                else { return }
+                self?.imageView?.image = image
+            }
+        } else {
+            imageView?.image = FileIcon.image(for: item, isLocalVolume: isLocalVolume)
+        }
+    }
+
     /// Turns the name label into an editable field holding `name`.
     func beginEditing(name: String) {
         guard let field = textField else { return }

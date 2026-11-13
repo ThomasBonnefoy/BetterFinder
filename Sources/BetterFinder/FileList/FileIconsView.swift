@@ -141,6 +141,8 @@ final class FileIconItem: NSCollectionViewItem {
     private let label = NSTextField(wrappingLabelWithString: "")
     private let background = NSView()
     private let badge = GitBadgeView()
+    private var thumbnailTask: Task<Void, Never>?
+    private var shownURL: URL?
     /// Called by a double-click on the item.
     var onOpen: (() -> Void)?
 
@@ -197,12 +199,37 @@ final class FileIconItem: NSCollectionViewItem {
     @MainActor
     func configure(with item: FileItem, isLocalVolume: Bool, isCut: Bool, gitState: GitFileState? = nil, showsExtension: Bool = true) {
         badge.show(gitState, isFolder: item.isBrowsable)
-        icon.image = FileIcon.image(for: item, isLocalVolume: isLocalVolume)
+        showIcon(of: item, isLocalVolume: isLocalVolume)
         label.stringValue = item.displayName(showsExtension: showsExtension)
         let alpha: CGFloat = isCut ? 0.45 : 1
         icon.alphaValue = alpha
         label.alphaValue = alpha
         updateSelectionAppearance()
+    }
+
+    /// The icon of the type at once, then the picture of the file if it has
+    /// one, as long as this item still shows that file.
+    @MainActor
+    private func showIcon(of item: FileItem, isLocalVolume: Bool) {
+        thumbnailTask?.cancel()
+        thumbnailTask = nil
+        shownURL = item.url
+        let side: CGFloat = 52
+        guard Thumbnails.wants(item, isLocalVolume: isLocalVolume) else {
+            icon.image = FileIcon.image(for: item, isLocalVolume: isLocalVolume)
+            return
+        }
+        if let image = Thumbnails.cached(for: item, side: side) {
+            icon.image = image
+            return
+        }
+        icon.image = FileIcon.image(for: item, isLocalVolume: isLocalVolume)
+        thumbnailTask = Task { @MainActor [weak self] in
+            guard let image = await Thumbnails.load(for: item, side: side),
+                  !Task.isCancelled, self?.shownURL == item.url
+            else { return }
+            self?.icon.image = image
+        }
     }
 
     private func updateSelectionAppearance() {
