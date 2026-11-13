@@ -4,6 +4,14 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et les n
 
 ## [Non publié]
 
+## [0.21.0] - 2026-11-13
+
+Les propriétés d'un élément, avec la vraie taille d'un dossier.
+
+### Ajouté
+- « Propriétés » (`Cmd+I` ou `Option+Entrée`, menu Édition ou clic droit, sur un élément, une sélection ou le vide de la liste pour le dossier ouvert) : nom, type, emplacement, dates de création, de modification et de dernière ouverture, attributs (lecture seule, masqué), taille exacte en octets.
+- Pour un dossier, un paquet (une app) ou une sélection de plusieurs éléments, la taille totale est calculée pendant que la fenêtre est ouverte, avec le nombre de fichiers et de dossiers et l'espace pris sur le disque. Les fichiers masqués comptent, les liens symboliques ne sont pas suivis, et les éléments que macOS refuse de lire sont signalés (la taille est alors un minimum). Fermer la fenêtre arrête le calcul.
+
 ## [0.20.0] - 2026-11-13
 
 Afficher ou masquer les extensions.
