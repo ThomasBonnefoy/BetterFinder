@@ -26,6 +26,7 @@ final class ToolbarLayoutStore {
     }
 
     func add(_ item: String) { change { $0.add(item) } }
+    func addSpace(_ kind: ToolbarLayout.SpaceKind) { change { $0.addSpace(kind) } }
     func remove(_ item: String) { change { $0.remove(item) } }
     func moveUp(_ item: String) { change { $0.moveUp(item) } }
     func moveDown(_ item: String) { change { $0.moveDown(item) } }

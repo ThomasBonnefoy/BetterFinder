@@ -57,4 +57,50 @@ import Testing
         layout.moveDown("back")
         #expect(layout.items == ["trash", "back", "up"])
     }
+
+    // MARK: - Spaces
+
+    @Test func spacesCanBeAddedSeveralTimesUnderDifferentIdentifiers() {
+        var layout = ToolbarLayout(items: ["back", "up"])
+        let first = layout.addSpace(.fixed)
+        let second = layout.addSpace(.fixed)
+        let third = layout.addSpace(.flexible, at: 1)
+        #expect(first == "space.fixed.1")
+        #expect(second == "space.fixed.2")
+        #expect(third == "space.flexible.1")
+        #expect(layout.items == ["back", "space.flexible.1", "up", "space.fixed.1", "space.fixed.2"])
+    }
+
+    @Test func aFreedSpaceNumberIsReused() {
+        var layout = ToolbarLayout(items: ["back"])
+        layout.addSpace(.fixed)
+        layout.addSpace(.fixed)
+        layout.remove("space.fixed.1")
+        #expect(layout.addSpace(.fixed) == "space.fixed.1")
+    }
+
+    @Test func savedSpacesSurviveButBrokenOnesAreDropped() {
+        let layout = ToolbarLayout(items: ["back", "space.fixed.1", "space.flexible.3", "space.fixed.", "space.huge.1", "space.fixed.1"])
+        #expect(layout.items == ["back", "space.fixed.1", "space.flexible.3"])
+    }
+
+    @Test func spacesKnowTheirKind() {
+        #expect(ToolbarLayout.spaceKind(of: "space.fixed.4") == .fixed)
+        #expect(ToolbarLayout.spaceKind(of: "space.flexible.1") == .flexible)
+        #expect(ToolbarLayout.spaceKind(of: "back") == nil)
+        #expect(ToolbarLayout.isSpace("space.fixed.1"))
+    }
+
+    @Test func spacesAreNeverListedAsAvailableButtons() {
+        var layout = ToolbarLayout(items: [])
+        layout.addSpace(.fixed)
+        #expect(layout.available == ToolbarLayout.known)
+    }
+
+    @Test func spacesMoveLikeAnyItem() {
+        var layout = ToolbarLayout(items: ["back", "up"])
+        let space = layout.addSpace(.flexible)
+        layout.moveUp(space)
+        #expect(layout.items == ["back", space, "up"])
+    }
 }

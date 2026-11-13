@@ -11,7 +11,7 @@ struct ToolbarCustomizer: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Personnaliser la barre d'outils")
                 .font(.headline)
-            Text("Glissez les lignes pour changer l'ordre. Les changements s'appliquent tout de suite.")
+            Text("Glissez les lignes pour changer l'ordre ; ajoutez des espaces pour scinder la barre en groupes. Les changements s'appliquent tout de suite.")
                 .font(.callout)
                 .foregroundStyle(.secondary)
 
@@ -27,6 +27,14 @@ struct ToolbarCustomizer: View {
                         }
                     }
                     .onMove { store.move(fromOffsets: $0, toOffset: $1) }
+                }
+                Section("Espaces") {
+                    row(title: "Espace", symbol: "rectangle.split.2x1", hint: "Scinde les boutons en groupes") {
+                        Button("Ajouter", systemImage: "plus.circle") { store.addSpace(.fixed) }
+                    }
+                    row(title: "Espace flexible", symbol: "arrow.left.and.right", hint: "Pousse la suite à droite") {
+                        Button("Ajouter", systemImage: "plus.circle") { store.addSpace(.flexible) }
+                    }
                 }
                 Section("Disponibles") {
                     ForEach(store.layout.available, id: \.self) { item in
@@ -55,8 +63,15 @@ struct ToolbarCustomizer: View {
     }
 
     private func row(_ item: String, @ViewBuilder actions: () -> some View) -> some View {
+        row(title: ToolbarItemInfo.title(of: item), symbol: ToolbarItemInfo.symbol(of: item), hint: nil, actions: actions)
+    }
+
+    private func row(title: String, symbol: String, hint: String?, @ViewBuilder actions: () -> some View) -> some View {
         HStack {
-            Label(ToolbarItemInfo.title(of: item), systemImage: ToolbarItemInfo.symbol(of: item))
+            Label(title, systemImage: symbol)
+            if let hint {
+                Text(hint).font(.callout).foregroundStyle(.secondary)
+            }
             Spacer()
             actions()
                 .labelStyle(.iconOnly)

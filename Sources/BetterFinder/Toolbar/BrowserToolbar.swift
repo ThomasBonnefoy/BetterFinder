@@ -17,13 +17,20 @@ struct BrowserToolbar: ToolbarContent {
 
     var body: some ToolbarContent {
         ForEach(store.layout.items, id: \.self) { item in
-            ToolbarItem {
-                ToolbarItemView(item: item, model: model)
-                    .contextMenu {
-                        Button("Retirer de la barre d'outils") { store.remove(item) }
-                        Divider()
-                        Button("Personnaliser la barre d'outils…") { model.isCustomizingToolbar = true }
-                    }
+            switch ToolbarLayout.spaceKind(of: item) {
+            case .fixed:
+                ToolbarSpacer(.fixed)
+            case .flexible:
+                ToolbarSpacer(.flexible)
+            case nil:
+                ToolbarItem {
+                    ToolbarItemView(item: item, model: model)
+                        .contextMenu {
+                            Button("Retirer de la barre d'outils") { store.remove(item) }
+                            Divider()
+                            Button("Personnaliser la barre d'outils…") { model.isCustomizingToolbar = true }
+                        }
+                }
             }
         }
     }
@@ -32,7 +39,12 @@ struct BrowserToolbar: ToolbarContent {
 /// Name and symbol of a toolbar item, for the toolbar and its customizer.
 enum ToolbarItemInfo {
     static func title(of item: String) -> String {
-        switch item {
+        switch ToolbarLayout.spaceKind(of: item) {
+        case .fixed: return "Espace"
+        case .flexible: return "Espace flexible"
+        case nil: break
+        }
+        return switch item {
         case "back": "Précédent"
         case "forward": "Suivant"
         case "up": "Dossier parent"
@@ -63,7 +75,12 @@ enum ToolbarItemInfo {
     }
 
     static func symbol(of item: String) -> String {
-        switch item {
+        switch ToolbarLayout.spaceKind(of: item) {
+        case .fixed: return "rectangle.split.2x1"
+        case .flexible: return "arrow.left.and.right"
+        case nil: break
+        }
+        return switch item {
         case "back": "chevron.left"
         case "forward": "chevron.right"
         case "up": "arrow.up"

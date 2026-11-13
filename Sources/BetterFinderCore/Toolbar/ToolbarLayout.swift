@@ -18,6 +18,27 @@ public struct ToolbarLayout: Equatable, Sendable {
         "compress", "properties", "previewPane",
     ]
 
+    /// A gap between buttons. Unlike buttons, spaces can be added many
+    /// times: each one has its own identifier, "space.fixed.1",
+    /// "space.flexible.2"…
+    public enum SpaceKind: Sendable {
+        /// A small gap, which splits the buttons into groups.
+        case fixed
+        /// A gap that takes all the room left, pushing what follows to the
+        /// right edge.
+        case flexible
+    }
+
+    public static func spaceKind(of item: String) -> SpaceKind? {
+        for (kind, prefix) in [(SpaceKind.fixed, "space.fixed."), (.flexible, "space.flexible.")]
+        where item.hasPrefix(prefix) && item.count > prefix.count {
+            return kind
+        }
+        return nil
+    }
+
+    public static func isSpace(_ item: String) -> Bool { spaceKind(of: item) != nil }
+
     /// What a new user sees.
     public static let standardItems: [String] = [
         "back", "forward", "up", "address", "viewMode", "reload", "newTab", "newFile", "search",
@@ -29,7 +50,9 @@ public struct ToolbarLayout: Equatable, Sendable {
     /// come from another version.
     public init(items: [String]) {
         var seen = Set<String>()
-        self.items = items.filter { Self.known.contains($0) && seen.insert($0).inserted }
+        self.items = items.filter {
+            (Self.known.contains($0) || Self.isSpace($0)) && seen.insert($0).inserted
+        }
     }
 
     /// Known items that are not in the toolbar, in their standard order.
@@ -45,6 +68,18 @@ public struct ToolbarLayout: Equatable, Sendable {
         guard Self.known.contains(item), !items.contains(item) else { return }
         let position = min(max(index ?? items.count, 0), items.count)
         items.insert(item, at: position)
+    }
+
+    /// Adds a space at the end, or at `index`, under a fresh identifier.
+    @discardableResult
+    public mutating func addSpace(_ kind: SpaceKind, at index: Int? = nil) -> String {
+        let word = kind == .fixed ? "fixed" : "flexible"
+        var number = 1
+        while items.contains("space.\(word).\(number)") { number += 1 }
+        let id = "space.\(word).\(number)"
+        let position = min(max(index ?? items.count, 0), items.count)
+        items.insert(id, at: position)
+        return id
     }
 
     public mutating func remove(_ item: String) {
