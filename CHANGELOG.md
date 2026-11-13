@@ -4,6 +4,14 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et les n
 
 ## [Non publié]
 
+## [0.28.0] - 2026-11-13
+
+Les images montrent leur contenu.
+
+### Modifié
+- Les images, les vidéos et les PDF s'affichent sous forme d'une miniature de leur contenu, dans la liste comme dans la vue en icônes, au lieu de l'icône générique de leur type. La miniature arrive une fraction de seconde après la ligne (l'icône du type s'affiche d'abord) et est gardée en mémoire tant que le fichier ne change pas.
+- Les dossiers, les applications et les autres documents gardent leur icône. Sur un lecteur réseau, les icônes restent génériques : lire chaque fichier à distance pour dessiner une liste serait trop lent.
+
 ## [0.27.0] - 2026-11-13
 
 La barre d'outils se compose par glisser-déposer.
