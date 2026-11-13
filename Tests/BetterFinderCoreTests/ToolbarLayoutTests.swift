@@ -103,4 +103,55 @@ import Testing
         layout.moveUp(space)
         #expect(layout.items == ["back", space, "up"])
     }
+
+    // MARK: - Dropping
+
+    @Test func droppingAnItemOfTheToolbarMovesIt() {
+        var layout = ToolbarLayout(items: ["back", "forward", "up", "trash"])
+        let r1 = layout.place("trash", before: "forward")
+        #expect(r1)
+        #expect(layout.items == ["back", "trash", "forward", "up"])
+        let r2 = layout.place("back", before: nil)
+        #expect(r2)
+        #expect(layout.items == ["trash", "forward", "up", "back"])
+    }
+
+    @Test func droppingANewButtonAddsItAtThatPlace() {
+        var layout = ToolbarLayout(items: ["back", "up"])
+        let r3 = layout.place("trash", before: "up")
+        #expect(r3)
+        #expect(layout.items == ["back", "trash", "up"])
+    }
+
+    @Test func droppingOnItselfOrWhereItAlreadyIsDoesNothing() {
+        var layout = ToolbarLayout(items: ["back", "forward", "up"])
+        let r4 = layout.place("forward", before: "forward")
+        #expect(!r4)
+        let r5 = layout.place("forward", before: "up")
+        #expect(!r5)
+        let r6 = layout.place("up", before: nil)
+        #expect(!r6)
+        #expect(layout.items == ["back", "forward", "up"])
+    }
+
+    @Test func anUnknownTargetMeansTheEnd() {
+        var layout = ToolbarLayout(items: ["back", "up"])
+        layout.place("trash", before: "nowhere")
+        #expect(layout.items == ["back", "up", "trash"])
+    }
+
+    @Test func unknownItemsCannotBeDropped() {
+        var layout = ToolbarLayout(items: ["back"])
+        let r7 = layout.place("bogus", before: nil)
+        #expect(!r7)
+        #expect(layout.items == ["back"])
+    }
+
+    @Test func aNewSpaceLandsBeforeTheTarget() {
+        var layout = ToolbarLayout(items: ["back", "forward", "up"])
+        let id = layout.addSpace(.fixed, before: "up")
+        #expect(layout.items == ["back", "forward", id, "up"])
+        let last = layout.addSpace(.flexible, before: nil)
+        #expect(layout.items.last == last)
+    }
 }

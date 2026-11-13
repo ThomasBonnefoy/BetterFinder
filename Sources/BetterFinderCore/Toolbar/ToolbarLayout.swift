@@ -82,6 +82,29 @@ public struct ToolbarLayout: Equatable, Sendable {
         return id
     }
 
+    /// Puts an item right before `target`, or last when `target` is `nil` or
+    /// not in the toolbar. An item already in the toolbar is moved; a known
+    /// button that is not yet there is added. This is what dropping an item
+    /// in the toolbar does. Returns false when nothing was done.
+    @discardableResult
+    public mutating func place(_ item: String, before target: String?) -> Bool {
+        guard Self.known.contains(item) || Self.isSpace(item), item != target else { return false }
+        let wasThere = items.contains(item)
+        let original = items
+        items.removeAll { $0 == item }
+        let index = target.flatMap { items.firstIndex(of: $0) } ?? items.count
+        items.insert(item, at: index)
+        return !wasThere || items != original
+    }
+
+    /// Adds a new space right before `target`, or last.
+    @discardableResult
+    public mutating func addSpace(_ kind: SpaceKind, before target: String?) -> String {
+        let id = addSpace(kind)
+        place(id, before: target)
+        return id
+    }
+
     public mutating func remove(_ item: String) {
         items.removeAll { $0 == item }
     }
