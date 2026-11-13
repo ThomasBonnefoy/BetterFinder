@@ -435,6 +435,47 @@ final class BrowserModel {
         open(selectedItems)
     }
 
+    // MARK: - Open with
+
+    /// Finds applications and opens files with one. A property so that tests
+    /// can replace it.
+    @ObservationIgnored var openWith = OpenWith.live
+
+    /// The files "Ouvrir avec…" acts on: the selection, when it holds only
+    /// files (a folder is browsed, not opened with an application).
+    var filesToOpenWith: [URL] {
+        let selected = selectedItems
+        guard !selected.isEmpty, selected.allSatisfy({ !$0.isBrowsable }) else { return [] }
+        return selected.map(\.url)
+    }
+
+    /// Applications that can open the selection: those of the first file.
+    func applicationsForSelection() -> [OpenWithApp] {
+        guard let first = filesToOpenWith.first else { return [] }
+        return openWith.applications(first)
+    }
+
+    func openSelection(with app: URL) {
+        let files = filesToOpenWith
+        guard !files.isEmpty else { return }
+        openWith.open(files, app)
+    }
+
+    /// Lets the user pick any application in /Applications, then opens the
+    /// selection with it.
+    func chooseApplicationToOpenSelection() {
+        guard !filesToOpenWith.isEmpty else { return }
+        let panel = NSOpenPanel()
+        panel.title = "Ouvrir avec"
+        panel.prompt = "Ouvrir"
+        panel.allowedContentTypes = [.applicationBundle]
+        panel.directoryURL = URL(filePath: "/Applications", directoryHint: .isDirectory)
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = false
+        guard panel.runModal() == .OK, let app = panel.url else { return }
+        openSelection(with: app)
+    }
+
     func setSort(_ newSort: FileSort) {
         guard newSort != sort else { return }
         sort = newSort

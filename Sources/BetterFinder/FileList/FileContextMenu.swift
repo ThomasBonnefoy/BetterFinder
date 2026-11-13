@@ -48,6 +48,9 @@ final class FileContextMenu: NSObject, NSMenuDelegate {
 
     private func buildItemMenu(_ menu: NSMenu, selectionCount: Int) {
         menu.addItem(item("Ouvrir", #selector(menuOpen)))
+        if !model.filesToOpenWith.isEmpty {
+            menu.addItem(openWithItem())
+        }
         menu.addItem(item("Coup d'œil", #selector(menuQuickLook)))
         if model.canOpenSelectionInNewTabs {
             menu.addItem(item("Ouvrir dans un nouvel onglet", #selector(menuOpenInNewTab)))
@@ -102,6 +105,31 @@ final class FileContextMenu: NSObject, NSMenuDelegate {
         menu.addItem(item("Afficher dans le Finder", #selector(menuReveal)))
     }
 
+    /// "Ouvrir avec" and its submenu: the applications that can open the
+    /// selection, the default one first, then "Autre…".
+    private func openWithItem() -> NSMenuItem {
+        let parent = NSMenuItem(title: "Ouvrir avec", action: nil, keyEquivalent: "")
+        let submenu = NSMenu()
+        submenu.autoenablesItems = false
+        for app in model.applicationsForSelection() {
+            let entry = NSMenuItem(
+                title: app.isDefault ? "\(app.name) (par défaut)" : app.name,
+                action: #selector(menuOpenWith(_:)),
+                keyEquivalent: ""
+            )
+            entry.target = self
+            entry.representedObject = app.url
+            let icon = NSWorkspace.shared.icon(forFile: app.url.path)
+            icon.size = NSSize(width: 16, height: 16)
+            entry.image = icon
+            submenu.addItem(entry)
+        }
+        if submenu.numberOfItems > 0 { submenu.addItem(.separator()) }
+        submenu.addItem(item("Autre…", #selector(menuOpenWithOther)))
+        parent.submenu = submenu
+        return parent
+    }
+
     private func item(_ title: String, _ action: Selector, enabled: Bool = true) -> NSMenuItem {
         let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
         item.target = self
@@ -110,6 +138,11 @@ final class FileContextMenu: NSObject, NSMenuDelegate {
     }
 
     @objc private func menuOpen() { model.openSelection() }
+    @objc private func menuOpenWith(_ sender: NSMenuItem) {
+        guard let app = sender.representedObject as? URL else { return }
+        model.openSelection(with: app)
+    }
+    @objc private func menuOpenWithOther() { model.chooseApplicationToOpenSelection() }
     @objc private func menuQuickLook() { quickLook() }
     @objc private func menuOpenInNewTab() { model.openSelectionInNewTabs() }
     @objc private func menuCut() { model.cutSelection() }
