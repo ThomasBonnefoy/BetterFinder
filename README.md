@@ -8,14 +8,28 @@ L'idée de départ : garder les **lecteurs réseau toujours visibles dans la bar
 
 - **Lecteurs réseau toujours visibles** : chaque lecteur garde sa place dans la barre latérale et montre son état (connecté, disponible, hors ligne). Il se reconnecte tout seul quand le serveur répond de nouveau, si l'option est cochée.
 - **Arborescence dans la barre latérale** : chaque favori, lecteur ou volume se déplie pour montrer ses sous-dossiers ; l'option « Développer jusqu'au dossier ouvert » (menu Présentation) la fait suivre le dossier affiché
-- **Vue « Ce Mac »** (l'équivalent de « Ce PC ») : dossiers principaux, disques avec leur espace libre, lecteurs réseau avec leur état
+- **Favoris personnalisables** : ajoutez les dossiers de votre choix (bouton « + », clic droit, ou glisser-déposer), retirez-en et remettez-les dans l'ordre voulu
+- **Vue « Ce Mac »** (l'équivalent de « Ce PC ») : favoris, disques avec leur espace libre, lecteurs réseau avec leur état
 - **Onglets**, avec la barre d'onglets de macOS : `Cmd+T`, « Ouvrir dans un nouvel onglet » au clic droit
-- Liste détaillée triable (nom, date de modification, type, taille), dossiers en premier
+- Liste détaillée triable (nom, date de modification, type, taille), dossiers en premier, ou grille d'icônes (`Cmd+1`, `Cmd+2`)
 - Couper, copier, coller, renommer, corbeille, nouveau dossier et nouveau document, avec annulation ; rien n'est jamais écrasé
-- Menu contextuel au clic droit
+- Glisser-déposer entre dossiers, fenêtres, onglets, barre latérale et Finder : déplacement dans le même disque, copie vers un autre (`Option` force la copie, `Cmd` le déplacement)
+- Recherche par nom dans le dossier et ses sous-dossiers (`Cmd+F`), sans tenir compte des accents ni des majuscules
+- Coup d'œil : `Espace` affiche un aperçu du fichier sélectionné
+- **Infos Git** : dans un dépôt, la barre d'état montre la branche, les commits à envoyer ou à recevoir, le nombre de fichiers changés et le dernier commit ; un clic sur la branche permet d'en changer ; une lettre de couleur marque les fichiers modifiés, ajoutés ou non suivis
+- **Corbeille** dans la barre latérale et dans « Ce Mac » : on y glisse des fichiers, on la vide avec confirmation. Pour en voir le contenu, macOS demande d'ajouter BetterFinder dans Réglages Système > Confidentialité et sécurité > Accès complet au disque
+- Menu contextuel au clic droit, avec « Ouvrir avec » (les applications compatibles, ou « Autre… ») et « Ouvrir dans le terminal » sur tout dossier (Ghostty, iTerm, Warp ou Terminal, au choix dans les réglages)
 - Barre d'adresse : fil d'Ariane cliquable, ou chemin à saisir (`Cmd+L`)
 - Précédent, suivant, dossier parent
 - Raccourcis de l'Explorateur Windows adaptés au Mac
+- **Barre d'outils personnalisable** : menu Présentation > « Personnaliser la barre d'outils… » ou clic droit sur un bouton, pour choisir ses boutons et leur ordre ; un bouton « Nouveau fichier » crée un document texte en un clic
+- Panneau d'aperçu (`Option+P`) : aperçu Quick Look et détails de l'élément sélectionné
+- Renommage par lot (numéroter, chercher et remplacer, préfixe et suffixe) avec aperçu
+- Remettre un élément de la corbeille à sa place (via le Finder)
+- Compresser en zip, sans le dossier `__MACOSX` des archives du Finder
+- Propriétés (`Cmd+I`) avec la taille réelle d'un dossier, calculée en tâche de fond
+- Extensions de nom de fichier affichables ou masquables (menu Présentation)
+- Réglages (`Cmd+,`) : page d'ouverture, présentation, fichiers masqués, extensions, infos Git, terminal
 
 La suite est décrite dans le [journal des modifications](CHANGELOG.md).
 
@@ -45,13 +59,19 @@ Le mot de passe est demandé par macOS à la première connexion et rangé dans 
 | Dossier suivant | `Option+→` ou `Cmd+]` |
 | Dossier parent | `Option+↑` ou `Cmd+↑` |
 | Couper, copier, coller | `Cmd+X`, `Cmd+C`, `Cmd+V` |
-| Renommer | `F2` |
+| Renommer (plusieurs éléments : par lot) | `F2` |
 | Mettre à la corbeille | `Suppr` ou `Cmd+Retour arrière` |
 | Supprimer définitivement | `Maj+Suppr` ou `Cmd+Option+Retour arrière` |
 | Nouveau dossier | `Cmd+Maj+N` |
 | Annuler, rétablir | `Cmd+Z`, `Cmd+Maj+Z` |
 | Copier le chemin d'accès | `Cmd+Maj+C` |
 | Modifier l'adresse | `Cmd+L` |
+| Rechercher | `Cmd+F` |
+| Présentation détails, icônes | `Cmd+1`, `Cmd+2` |
+| Coup d'œil | `Espace` ou `Cmd+Y` |
+| Propriétés | `Cmd+I` ou `Option+Entrée` |
+| Panneau d'aperçu | `Option+P` |
+| Ouvrir dans le terminal | `Cmd+Option+T` |
 | Ajouter un lecteur réseau | `Cmd+K` |
 | Actualiser | `Cmd+R` ou `F5` |
 | Afficher les fichiers masqués | `Cmd+Maj+.` |
@@ -83,6 +103,10 @@ Pour l'installer dans `/Applications` :
 ```bash
 scripts/install.sh
 ```
+
+## Garder les autorisations entre deux installations
+
+L'app n'a pas de signature de développeur Apple : signée « ad hoc », elle change de signature à chaque compilation et macOS oublie alors « Accès complet au disque ». `scripts/bundle.sh` utilise un certificat local nommé « BetterFinder Local » s'il est dans le trousseau de session, ce qui garde la signature stable. Pour le créer (une seule fois) : Trousseaux d'accès > Assistant de certification > Créer un certificat…, nom « BetterFinder Local », type « Signature de code ».
 
 ## Installer une version téléchargée
 

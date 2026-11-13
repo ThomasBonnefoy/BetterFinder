@@ -6,6 +6,11 @@ import UniformTypeIdentifiers
 /// plain text.
 final class FileCellView: NSTableCellView {
     private let column: FileColumn
+    /// Git state of the item, at the end of the name column.
+    private var badge: GitBadgeView?
+    /// Makes the picture of an image while the generic icon is shown.
+    private var thumbnailTask: Task<Void, Never>?
+    private var shownURL: URL?
 
     init(column: FileColumn) {
         self.column = column
@@ -26,10 +31,18 @@ final class FileCellView: NSTableCellView {
 
         var constraints = [
             label.centerYAnchor.constraint(equalTo: centerYAnchor),
-            label.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -2),
         ]
 
         if column == .name {
+            let badge = GitBadgeView()
+            addSubview(badge)
+            self.badge = badge
+            constraints += [
+                badge.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -4),
+                badge.centerYAnchor.constraint(equalTo: centerYAnchor),
+                label.trailingAnchor.constraint(equalTo: badge.leadingAnchor, constant: -4),
+            ]
+
             let icon = NSImageView()
             icon.translatesAutoresizingMaskIntoConstraints = false
             icon.imageScaling = .scaleProportionallyUpOrDown
@@ -43,7 +56,10 @@ final class FileCellView: NSTableCellView {
                 label.leadingAnchor.constraint(equalTo: icon.trailingAnchor, constant: 6),
             ]
         } else {
-            constraints.append(label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 2))
+            constraints += [
+                label.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 2),
+                label.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -2),
+            ]
         }
         NSLayoutConstraint.activate(constraints)
     }
@@ -53,15 +69,16 @@ final class FileCellView: NSTableCellView {
         fatalError("init(coder:) is not supported")
     }
 
-    func configure(with item: FileItem, isLocalVolume: Bool, isCut: Bool) {
+    func configure(with item: FileItem, isLocalVolume: Bool, isCut: Bool, gitState: GitFileState? = nil, showsExtension: Bool = true) {
+        badge?.show(gitState, isFolder: item.isBrowsable)
         // Cut items are shown faded until they are pasted, as in Explorer.
         let alpha: CGFloat = isCut ? 0.45 : 1
         textField?.alphaValue = alpha
         imageView?.alphaValue = alpha
         switch column {
         case .name:
-            textField?.stringValue = item.name
-            imageView?.image = FileIcon.image(for: item, isLocalVolume: isLocalVolume)
+            textField?.stringValue = item.displayName(showsExtension: showsExtension)
+            showIcon(of: item, isLocalVolume: isLocalVolume)
         case .dateModified:
             textField?.stringValue = item.modificationDate.map(FileFormat.date) ?? ""
         case .kind:
@@ -73,6 +90,31 @@ final class FileCellView: NSTableCellView {
 }
 
 extension FileCellView {
+    /// The icon of the type at once, then the picture of the file if it has
+    /// one. A cell is reused for other files: the picture is only used if the
+    /// cell still shows the file it was made for.
+    private func showIcon(of item: FileItem, isLocalVolume: Bool) {
+        thumbnailTask?.cancel()
+        thumbnailTask = nil
+        shownURL = item.url
+        let side: CGFloat = 16
+        if Thumbnails.wants(item, isLocalVolume: isLocalVolume) {
+            if let image = Thumbnails.cached(for: item, side: side) {
+                imageView?.image = image
+                return
+            }
+            imageView?.image = FileIcon.image(for: item, isLocalVolume: isLocalVolume)
+            thumbnailTask = Task { @MainActor [weak self] in
+                guard let image = await Thumbnails.load(for: item, side: side),
+                      !Task.isCancelled, self?.shownURL == item.url
+                else { return }
+                self?.imageView?.image = image
+            }
+        } else {
+            imageView?.image = FileIcon.image(for: item, isLocalVolume: isLocalVolume)
+        }
+    }
+
     /// Turns the name label into an editable field holding `name`.
     func beginEditing(name: String) {
         guard let field = textField else { return }

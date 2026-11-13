@@ -11,11 +11,19 @@ public enum FileOperation: Equatable, Sendable {
     /// This is what undoing a move, a rename or a trip to the Trash uses.
     case moveExact([FileMove])
     case rename(URL, to: String)
+    /// Renames several items of one folder at once. Items may take each
+    /// other's names (a swap): nothing is renamed unless all can be, and
+    /// a failure puts back what was done. Its undo is the same operation
+    /// the other way round.
+    case renameMany([FileMove])
     case trash([URL])
     /// Deletes for good. Cannot be undone.
     case delete([URL])
     case createFolder(in: URL, name: String)
     case createFile(in: URL, name: String)
+    /// Packs items into a new zip archive named `name` in a folder, the way
+    /// the Finder does. Never overwrites: a taken name gets a number.
+    case compress([URL], in: URL, name: String)
 }
 
 public struct FileMove: Equatable, Sendable {
@@ -41,6 +49,8 @@ public struct FileOperationFailure: Error, Equatable, Sendable {
         /// The volume has no Trash (many network shares): the items can only
         /// be deleted for good.
         case trashUnavailable
+        /// The items to pack are not all in the same folder.
+        case differentFolders
         /// The system refused; the text is its own explanation.
         case system(String)
     }

@@ -18,5 +18,9 @@ struct BetterFinderApp: App {
             SidebarCommands()
             BrowserCommands()
         }
+
+        Settings {
+            SettingsView()
+        }
     }
 }

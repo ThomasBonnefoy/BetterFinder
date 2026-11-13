@@ -16,19 +16,26 @@ struct FileListView: View {
     }
 
     private func table(for folder: URL) -> some View {
-        FileTableView(
-            model: model,
-            state: FileTableView.State(
-                folder: folder,
-                items: model.items,
-                selection: model.selection,
-                sort: model.sort,
-                isLocalVolume: model.isLocalVolume,
-                focusRequests: model.listFocusRequests,
-                cutURLs: model.clipboard.cutURLs,
-                renameRequest: model.renameRequest
-            )
+        let state = FileTableView.State(
+            folder: folder,
+            items: model.items,
+            selection: model.selection,
+            sort: model.sort,
+            isLocalVolume: model.isLocalVolume,
+            focusRequests: model.listFocusRequests,
+            cutURLs: model.clipboard.cutURLs,
+            renameRequest: model.renameRequest,
+            gitStates: model.gitInfo?.states ?? [:],
+            showsExtensions: model.showsExtensions
         )
+        return Group {
+            switch model.viewMode {
+            case .details:
+                FileTableView(model: model, state: state)
+            case .icons:
+                FileIconsView(model: model, state: state)
+            }
+        }
         .overlay { placeholder }
     }
 
@@ -39,6 +46,8 @@ struct FileListView: View {
             ProgressView()
                 .controlSize(.small)
                 .allowsHitTesting(false)
+        case .failed where model.accessDenied:
+            AccessDeniedView(isTrash: model.isInTrash)
         case .failed(let message):
             ContentUnavailableView {
                 Label("Impossible d'ouvrir ce dossier", systemImage: "exclamationmark.triangle")
@@ -48,9 +57,25 @@ struct FileListView: View {
                 Button("Réessayer") { model.reload() }
             }
         case .loaded:
-            if model.items.isEmpty {
-                ContentUnavailableView("Ce dossier est vide", systemImage: "folder")
-                    .allowsHitTesting(false)
+            if model.isSearching {
+                if model.items.isEmpty {
+                    if model.isSearchRunning {
+                        ProgressView()
+                            .controlSize(.small)
+                            .allowsHitTesting(false)
+                    } else {
+                        ContentUnavailableView.search(text: model.searchText)
+                            .allowsHitTesting(false)
+                    }
+                }
+            } else if model.items.isEmpty {
+                if model.isOnTrash {
+                    ContentUnavailableView("La corbeille est vide", systemImage: "trash")
+                        .allowsHitTesting(false)
+                } else {
+                    ContentUnavailableView("Ce dossier est vide", systemImage: "folder")
+                        .allowsHitTesting(false)
+                }
             }
         }
     }

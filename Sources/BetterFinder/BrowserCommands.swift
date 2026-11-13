@@ -1,3 +1,4 @@
+import BetterFinderCore
 import SwiftUI
 
 /// Menu bar commands that act on the frontmost browser window.
@@ -17,6 +18,15 @@ struct BrowserCommands: Commands {
             Button("Nouveau document texte") { model?.newTextFile() }
                 .disabled(model == nil)
             Divider()
+            Button("Ouvrir dans le terminal") { model?.openInTerminal() }
+                .keyboardShortcut("t", modifiers: [.command, .option])
+                .disabled(model?.terminalFolder == nil)
+            Divider()
+            Button("Remettre") { model?.restoreSelection() }
+                .disabled(model?.canRestoreSelection != true)
+            Button("Vider la corbeille…") { model?.askToEmptyTrash() }
+                .disabled(model == nil)
+            Divider()
             Button("Ajouter un lecteur réseau…") { model?.driveEditor = DriveEditorRequest() }
                 .keyboardShortcut("k")
                 .disabled(model == nil)
@@ -29,16 +39,47 @@ struct BrowserCommands: Commands {
             Button("Copier le chemin d'accès") { model?.copyPathOfSelection() }
                 .keyboardShortcut("c", modifiers: [.command, .shift])
                 .disabled(model == nil)
+            Button("Compresser") { model?.compressSelection() }
+                .disabled(model?.canCompressSelection != true)
+            Button("Propriétés") { model?.showProperties() }
+                .keyboardShortcut("i")
+                .disabled(model == nil)
         }
 
         CommandGroup(before: .sidebar) {
+            Picker("Présentation", selection: viewMode) {
+                Text("Détails").tag(ViewMode.details)
+                    .keyboardShortcut("1")
+                Text("Icônes").tag(ViewMode.icons)
+                    .keyboardShortcut("2")
+            }
+            .pickerStyle(.inline)
+            .disabled(model == nil)
+            Menu("Trier par") {
+                ForEach(SortKey.allCases, id: \.self) { key in
+                    Button(Self.title(of: key)) { model?.setSort(FileSort(key: key, ascending: model?.sort.ascending ?? true)) }
+                }
+                Divider()
+                Button("Croissant") { model.map { $0.setSort(FileSort(key: $0.sort.key, ascending: true)) } }
+                Button("Décroissant") { model.map { $0.setSort(FileSort(key: $0.sort.key, ascending: false)) } }
+            }
+            .disabled(model == nil)
+            Divider()
             Button("Actualiser") { model?.reload() }
                 .keyboardShortcut("r")
                 .disabled(model == nil)
             Toggle("Afficher les fichiers masqués", isOn: showHidden)
                 .keyboardShortcut(".", modifiers: [.command, .shift])
                 .disabled(model == nil)
+            Toggle("Panneau d'aperçu", isOn: showsPreviewPane)
+                .keyboardShortcut("p", modifiers: .option)
+                .disabled(model == nil)
+            Toggle("Afficher les extensions de nom de fichier", isOn: showsExtensions)
+                .disabled(model == nil)
             Toggle("Développer jusqu'au dossier ouvert", isOn: $sidebarFollowsLocation)
+            Divider()
+            Button("Personnaliser la barre d'outils…") { model?.isCustomizingToolbar = true }
+                .disabled(model == nil)
             Divider()
         }
 
@@ -56,13 +97,48 @@ struct BrowserCommands: Commands {
             Button(BrowserModel.computerName) { model?.showComputer() }
                 .keyboardShortcut("m", modifiers: [.command, .shift])
                 .disabled(model == nil)
+            Button(DisplayName.trash) { model?.showTrash() }
+                .disabled(model == nil)
             Button("Dossier personnel") { model?.goHome() }
                 .keyboardShortcut("h", modifiers: [.command, .shift])
                 .disabled(model == nil)
+            Button("Rechercher") { model?.focusSearch() }
+                .keyboardShortcut("f")
+                .disabled(model?.canSearch != true)
             Button("Modifier l'adresse") { model?.beginEditingAddress() }
                 .keyboardShortcut("l")
                 .disabled(model == nil)
         }
+    }
+
+    private var viewMode: Binding<ViewMode> {
+        Binding(
+            get: { model?.viewMode ?? .details },
+            set: { model?.viewMode = $0 }
+        )
+    }
+
+    private static func title(of key: SortKey) -> String {
+        switch key {
+        case .name: "Nom"
+        case .dateModified: "Date de modification"
+        case .kind: "Type"
+        case .size: "Taille"
+        }
+    }
+
+    private var showsPreviewPane: Binding<Bool> {
+        Binding(
+            get: { model?.showsPreviewPane ?? false },
+            set: { model?.showsPreviewPane = $0 }
+        )
+    }
+
+    private var showsExtensions: Binding<Bool> {
+        Binding(
+            get: { model?.showsExtensions ?? true },
+            set: { model?.showsExtensions = $0 }
+        )
     }
 
     private var showHidden: Binding<Bool> {

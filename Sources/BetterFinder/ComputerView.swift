@@ -12,7 +12,8 @@ struct ComputerView: View {
     /// The tile that was clicked last. A double-click opens it.
     @State private var selection: Tile?
 
-    private let favorites = Favorite.defaults
+    /// The user's favorites, as in the sidebar.
+    private var favorites: [Favorite] { FavoriteStore.shared.urls.map(Favorite.init(url:)) }
     private let columns = [GridItem(.adaptive(minimum: 250, maximum: 340), spacing: 12, alignment: .topLeading)]
 
     private enum Tile: Hashable {
@@ -23,7 +24,7 @@ struct ComputerView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
-                section("Dossiers") {
+                section("Favoris") {
                     ForEach(favorites) { favorite in
                         tile(.place(favorite.url), open: { model.navigate(to: favorite.url) }) {
                             PlaceIcon(url: favorite.url)
@@ -31,7 +32,14 @@ struct ComputerView: View {
                             Text(favorite.name)
                         } menu: {
                             placeMenu(for: favorite.url)
+                            Divider()
+                            Button("Retirer des favoris") { FavoriteStore.shared.remove(favorite.url) }
                         }
+                    }
+                    if favorites.isEmpty {
+                        Text("Aucun favori. Glissez un dossier sur « Favoris » dans la barre latérale pour en ajouter.")
+                            .foregroundStyle(.secondary)
+                            .padding(10)
                     }
                 }
 
@@ -52,6 +60,15 @@ struct ComputerView: View {
                         } menu: {
                             placeMenu(for: url)
                         }
+                    }
+                    tile(.place(model.trashURL), open: { model.showTrash() }) {
+                        symbolIcon("trash")
+                    } text: {
+                        Text(DisplayName.trash)
+                    } menu: {
+                        Button("Vider la corbeille…") { model.askToEmptyTrash() }
+                        Divider()
+                        placeMenu(for: model.trashURL)
                     }
                 }
 
@@ -176,6 +193,9 @@ struct ComputerView: View {
     @ViewBuilder
     private func placeMenu(for url: URL) -> some View {
         Button("Ouvrir dans un nouvel onglet") { model.openInNewTab(url) }
+        if url != model.trashURL {
+            Button("Ouvrir dans le terminal") { model.openInTerminal(url) }
+        }
         Divider()
         Button("Copier le chemin d'accès") { model.clipboard.copyText(url.path) }
         Button("Afficher dans le Finder") { NSWorkspace.shared.activateFileViewerSelecting([url]) }
@@ -185,6 +205,7 @@ struct ComputerView: View {
     private func driveMenu(for drive: NetworkDrive, status: DriveStatus) -> some View {
         if case .mounted(let folder) = status {
             Button("Ouvrir dans un nouvel onglet") { model.openInNewTab(folder) }
+            Button("Ouvrir dans le terminal") { model.openInTerminal(folder) }
             Button("Déconnecter") {
                 Task { await driveMonitor.disconnect(drive.id) }
             }

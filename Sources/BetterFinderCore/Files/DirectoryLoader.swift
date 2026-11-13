@@ -46,7 +46,7 @@ public enum DirectoryLoader {
         return DirectoryListing(url: url, items: urls.map(makeItem), isLocalVolume: isLocal)
     }
 
-    private static func makeItem(_ url: URL) -> FileItem {
+    static func makeItem(_ url: URL) -> FileItem {
         let values = try? url.resourceValues(forKeys: itemKeys)
         var isDirectory = values?.isDirectory ?? false
         if values?.isSymbolicLink == true {

@@ -10,6 +10,7 @@ struct BrowserWindow: View {
     @Environment(VolumeStore.self) private var volumeStore
     @Environment(DriveMonitor.self) private var driveMonitor
     @Environment(\.undoManager) private var undoManager
+    @AppStorage(AppSettings.showsGitInfoKey) private var showsGitInfo = true
 
     var body: some View {
         NavigationSplitView {
@@ -24,28 +25,7 @@ struct BrowserWindow: View {
             .navigationTitle(model.title)
             .toolbar(removing: .title)
             .toolbar {
-                ToolbarItemGroup(placement: .navigation) {
-                    Button("Précédent", systemImage: "chevron.left") { model.goBack() }
-                        .disabled(!model.canGoBack)
-                        .help("Dossier précédent")
-                    Button("Suivant", systemImage: "chevron.right") { model.goForward() }
-                        .disabled(!model.canGoForward)
-                        .help("Dossier suivant")
-                    Button("Dossier parent", systemImage: "arrow.up") { model.goUp() }
-                        .disabled(!model.canGoUp)
-                        .help("Dossier parent")
-                }
-                ToolbarItem(placement: .principal) {
-                    AddressBar(model: model)
-                }
-                ToolbarItemGroup(placement: .primaryAction) {
-                    Button("Actualiser", systemImage: "arrow.clockwise") { model.reload() }
-                        .help("Actualiser")
-                    // Always there, unlike the tab bar, which macOS hides
-                    // while the window has a single tab.
-                    Button("Nouvel onglet", systemImage: "plus") { model.newTab() }
-                        .help("Nouvel onglet")
-                }
+                BrowserToolbar(model: model)
             }
         }
         .focusedSceneValue(\.browserModel, model)
@@ -82,6 +62,12 @@ struct BrowserWindow: View {
         // A drive went online or offline: the window may have to switch
         // between its content and its "unavailable" page.
         .onChange(of: driveMonitor.statuses) { model.driveStatusesChanged() }
+        // Back from a terminal or an editor: files and commits may have
+        // changed without the folder shown being touched.
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            model.refreshGit()
+        }
+        .onChange(of: showsGitInfo) { model.refreshGit() }
         // File operations are undone from the Edit menu of this window.
         .onChange(of: undoManager, initial: true) { model.undoManager = undoManager }
         .alert(
@@ -101,12 +87,25 @@ struct BrowserWindow: View {
             ),
             presenting: model.deleteConfirmation
         ) { confirmation in
-            Button("Supprimer", role: .destructive) { model.deletePermanently(confirmation.urls) }
+            Button(confirmation.emptiesTrash ? "Vider la corbeille" : "Supprimer", role: .destructive) {
+                model.deletePermanently(confirmation.urls)
+            }
             Button("Annuler", role: .cancel) {}
         } message: { confirmation in
-            Text(confirmation.becauseNoTrash
+            Text(confirmation.emptiesTrash
+                ? "Les éléments de la corbeille seront supprimés définitivement. Cette action ne peut pas être annulée."
+                : confirmation.becauseNoTrash
                 ? "Ce lecteur n'a pas de corbeille. La suppression est immédiate et ne peut pas être annulée."
                 : "Cette action ne peut pas être annulée.")
+        }
+        .sheet(item: $model.batchRenameRequest) { request in
+            BatchRenameSheet(request: request, apply: { model.renameMany($0) }, cancel: { model.batchRenameRequest = nil })
+        }
+        .sheet(item: $model.propertiesRequest) { request in
+            PropertiesView(request: request) { model.propertiesRequest = nil }
+        }
+        .sheet(isPresented: $model.isCustomizingToolbar) {
+            ToolbarCustomizer()
         }
         .sheet(item: $model.driveEditor) { request in
             NavigationStack {
@@ -127,6 +126,11 @@ extension BrowserWindow {
     /// "Supprimer définitivement « a.txt » ?" or "… ces 3 éléments ?"
     fileprivate var deleteTitle: String {
         guard let urls = model.deleteConfirmation?.urls else { return "" }
+        if model.deleteConfirmation?.emptiesTrash == true {
+            return urls.count == 1
+                ? "Vider la corbeille et supprimer définitivement 1 élément ?"
+                : "Vider la corbeille et supprimer définitivement ces \(urls.count) éléments ?"
+        }
         if urls.count == 1, let url = urls.first {
             return "Supprimer définitivement « \(url.lastPathComponent) » ?"
         }
@@ -164,10 +168,10 @@ enum LaunchOptions {
     }
 
     /// True when windows open on the computer's overview, like Explorer on
-    /// "This PC": always, unless the command line names a folder or a share
-    /// (`-StartLocation ~/Documents`).
+    /// "This PC": unless the settings say otherwise or the command line names
+    /// a folder or a share (`-StartLocation ~/Documents`).
     static var startsOnComputer: Bool {
-        guard let location = startLocation else { return true }
+        guard let location = startLocation else { return AppSettings.opensOnComputer }
         return location.compare(BrowserModel.computerName, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
     }
 
