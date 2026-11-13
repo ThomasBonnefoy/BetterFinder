@@ -4,6 +4,15 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et les n
 
 ## [Non publié]
 
+## [0.20.0] - 2026-11-13
+
+Afficher ou masquer les extensions.
+
+### Ajouté
+- Menu Présentation > « Afficher les extensions de nom de fichier » : décoché, la liste et la vue en icônes montrent « photo » au lieu de « photo.png ». Les dossiers et les fichiers sans extension ne changent pas. Le choix est retenu d'un lancement à l'autre.
+- Réglage du même nom (`Cmd+,`) pour les nouvelles fenêtres.
+- Quand les extensions sont masquées, renommer un fichier ne modifie que son nom : l'extension d'origine est remise toute seule.
+
 ## [0.19.0] - 2026-11-13
 
 Ouvrir un fichier avec une autre application.

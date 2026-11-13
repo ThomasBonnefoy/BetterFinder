@@ -23,7 +23,8 @@ L'idée de départ : garder les **lecteurs réseau toujours visibles dans la bar
 - Précédent, suivant, dossier parent
 - Raccourcis de l'Explorateur Windows adaptés au Mac
 - **Barre d'outils personnalisable** : menu Présentation > « Personnaliser la barre d'outils… » ou clic droit sur un bouton, pour choisir ses boutons et leur ordre ; un bouton « Nouveau fichier » crée un document texte en un clic
-- Réglages (`Cmd+,`) : page d'ouverture, présentation, fichiers masqués, infos Git, terminal
+- Extensions de nom de fichier affichables ou masquables (menu Présentation)
+- Réglages (`Cmd+,`) : page d'ouverture, présentation, fichiers masqués, extensions, infos Git, terminal
 
 La suite est décrite dans le [journal des modifications](CHANGELOG.md).
 
