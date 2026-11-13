@@ -4,6 +4,15 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et les n
 
 ## [Non publié]
 
+## [0.24.0] - 2026-11-13
+
+Renommer plusieurs éléments d'un coup.
+
+### Ajouté
+- Avec plusieurs éléments sélectionnés, `F2`, « Renommer » du menu Édition ou « Renommer N éléments… » au clic droit ouvrent une fenêtre avec trois méthodes : numéroter (« Vacances (01).jpg », « Vacances (02).jpg »… avec le premier numéro et le nombre de chiffres au choix), chercher et remplacer (avec ou sans respect de la casse), ajouter un préfixe et un suffixe. Les extensions sont toujours conservées.
+- Un aperçu montre l'ancien et le nouveau nom de chaque élément pendant la saisie. Les noms impossibles (vide, « / » ou « : », en double, déjà pris par un élément laissé tel quel) sont signalés en rouge et bloquent le bouton « Renommer ».
+- Le renommage se fait en deux temps : des éléments peuvent donc échanger ou décaler leurs noms (a → b et b → c). Si un renommage échoue, tout revient à l'état d'avant. `Cmd+Z` rend les noms d'origine.
+
 ## [0.23.0] - 2026-11-13
 
 Remettre un élément de la corbeille à sa place.
