@@ -4,6 +4,14 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et les n
 
 ## [Non publié]
 
+## [0.23.0] - 2026-11-13
+
+Remettre un élément de la corbeille à sa place.
+
+### Ajouté
+- « Remettre » au clic droit sur un élément de la corbeille, et dans le menu Fichier : l'élément retourne dans le dossier d'où il venait. macOS ne fournit aucune fonction publique pour cela ; BetterFinder demande donc au Finder de le faire (commande « Remettre » du Finder). À la première utilisation, macOS demande si BetterFinder peut contrôler le Finder (Réglages Système > Confidentialité et sécurité > Automatisation) ; si on refuse, un message explique où le changer.
+- Seuls les éléments posés à la racine de la corbeille se remettent (un fichier à l'intérieur d'un dossier jeté n'a pas de place d'origine propre). La remise ne s'annule pas avec `Cmd+Z`.
+
 ## [0.22.0] - 2026-11-13
 
 Compresser en zip.

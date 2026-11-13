@@ -23,6 +23,7 @@ L'idée de départ : garder les **lecteurs réseau toujours visibles dans la bar
 - Précédent, suivant, dossier parent
 - Raccourcis de l'Explorateur Windows adaptés au Mac
 - **Barre d'outils personnalisable** : menu Présentation > « Personnaliser la barre d'outils… » ou clic droit sur un bouton, pour choisir ses boutons et leur ordre ; un bouton « Nouveau fichier » crée un document texte en un clic
+- Remettre un élément de la corbeille à sa place (via le Finder)
 - Compresser en zip, sans le dossier `__MACOSX` des archives du Finder
 - Propriétés (`Cmd+I`) avec la taille réelle d'un dossier, calculée en tâche de fond
 - Extensions de nom de fichier affichables ou masquables (menu Présentation)
